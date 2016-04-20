@@ -87,8 +87,8 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
   /**
    * Don't let the build fail if the commit of the POM files fails.
    * <br/>
-   * Useful if you run this plugin on a CI Server and don't want to let the build fail when
-   * a concurrent POM update occurred.
+   * Useful if you run this plugin on a CI Server and don't want to let the build fail when a concurrent POM update
+   * occurred.
    */
   @Parameter(defaultValue = "false")
   private boolean dontFailOnCommit;
@@ -115,8 +115,8 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
   private boolean generateIncrementalBuildScripts;
 
   /**
-   * Generate a property file with a property for all changed projects,
-   * which can be used in jenkins for an incremental build (mvn --project ${NONSNAPSHOT_CHANGED_PROJECTS}).
+   * Generate a property file with a property for all changed projects, which can be used in jenkins for an incremental
+   * build (mvn --project ${NONSNAPSHOT_CHANGED_PROJECTS}).
    */
   @Parameter(defaultValue = "false")
   private boolean generateChangedProjectsPropertyFile;
@@ -154,6 +154,7 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
 
   private PlexusContainer plexusContainer;
 
+  @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     StaticLoggerBinder.getSingleton().setLog(this.getLog());
 
@@ -405,4 +406,3 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
     this.plexusContainer = plexusContainer;
   }
 }
-

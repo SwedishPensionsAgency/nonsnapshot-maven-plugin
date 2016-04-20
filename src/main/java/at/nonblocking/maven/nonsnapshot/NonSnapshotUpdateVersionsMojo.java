@@ -53,9 +53,9 @@ import at.nonblocking.maven.nonsnapshot.model.MavenModule;
 @Mojo(name = "updateVersions", aggregator = true)
 public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
 
-  private static Logger LOG = LoggerFactory.getLogger(NonSnapshotUpdateVersionsMojo.class);
+  private static final Logger LOG = LoggerFactory.getLogger(NonSnapshotUpdateVersionsMojo.class);
 
-  private static String LINE_SEPARATOR = System.getProperty("line.separator");
+  private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
   private String timestamp;
 
@@ -152,7 +152,7 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
 
         if (qualifierString == null) {
           LOG.info("Invalid qualifier string found for artifact {}:{}: {}. Assigning a new version.",
-              new Object[]{mavenModule.getGroupId(), mavenModule.getArtifactId(), mavenModule.getVersion()});
+                  new Object[]{mavenModule.getGroupId(), mavenModule.getArtifactId(), mavenModule.getVersion()});
           mavenModule.setDirty(true);
 
         } else if (qualifierString.equals("SNAPSHOT")) {
@@ -169,7 +169,6 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
           } else {
 
             //Default: compare timestamps
-
             boolean changes;
 
             try {
@@ -177,7 +176,7 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
               changes = getScmHandler().checkChangesSinceDate(mavenModule.getPomFile().getParentFile(), versionTimestamp);
             } catch (ParseException e) {
               LOG.debug("Module {}:{}: Invalid timestamp qualifier: {}",
-                  new Object[]{mavenModule.getGroupId(), mavenModule.getArtifactId(), qualifierString});
+                      new Object[]{mavenModule.getGroupId(), mavenModule.getArtifactId(), qualifierString});
               changes = true;
             }
 
@@ -226,7 +225,7 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
         } catch (NonSnapshotDependencyResolverException e) {
           if (isDontFailOnUpstreamVersionResolution()) {
             LOG.warn("Upstream dependency resolution failed (cannot update {}:{}). Error: {}",
-                new Object[]{upstreamArtifact.getGroupId(), upstreamArtifact.getArtifactId(), e.getMessage()});
+                    new Object[]{upstreamArtifact.getGroupId(), upstreamArtifact.getArtifactId(), e.getMessage()});
           } else {
             throw e;
           }

@@ -27,12 +27,12 @@ import at.nonblocking.maven.nonsnapshot.model.MavenModule;
 
 public class NonSnapshotUpdateVersionsMojoTest {
 
-  private NonSnapshotUpdateVersionsMojo nonSnapshotMojo = new NonSnapshotUpdateVersionsMojo();
-  private ModuleTraverser mockModuleTraverser = mock(ModuleTraverser.class);
-  private DependencyTreeProcessor mockDependencyTreeProcessor = mock(DependencyTreeProcessor.class);
-  private MavenPomHandler mockMavenPomHandler = mock(MavenPomHandler.class);
-  private ScmHandler mockScmHandler = mock(ScmHandler.class);
-  private UpstreamDependencyHandler mockUpstreamDependencyHandler = mock(UpstreamDependencyHandler.class);
+  private final NonSnapshotUpdateVersionsMojo nonSnapshotMojo = new NonSnapshotUpdateVersionsMojo();
+  private final ModuleTraverser mockModuleTraverser = mock(ModuleTraverser.class);
+  private final DependencyTreeProcessor mockDependencyTreeProcessor = mock(DependencyTreeProcessor.class);
+  private final MavenPomHandler mockMavenPomHandler = mock(MavenPomHandler.class);
+  private final ScmHandler mockScmHandler = mock(ScmHandler.class);
+  private final UpstreamDependencyHandler mockUpstreamDependencyHandler = mock(UpstreamDependencyHandler.class);
 
   @BeforeClass
   public static void setupLog() {
@@ -243,13 +243,6 @@ public class NonSnapshotUpdateVersionsMojoTest {
     MavenModule wsArtifact4 = new MavenModule(pom4, "nonblocking.at", "test3", "2.1.0-FIX1-1234");
     MavenModule wsArtifact5 = new MavenModule(pom5, "nonblocking.at", "test3", "${test.version}"); // Invalid version
 
-    List<MavenModule> artifactList = new ArrayList<>();
-    artifactList.add(wsArtifact1);
-    artifactList.add(wsArtifact2);
-    artifactList.add(wsArtifact3);
-    artifactList.add(wsArtifact4);
-    artifactList.add(wsArtifact5);
-
     MavenProject mavenProject = new MavenProject();
     mavenProject.setFile(new File("target"));
 
@@ -263,7 +256,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockScmHandler.checkChangesSinceRevision(pom2.getParentFile(), "1234")).thenReturn(false);
     when(this.mockScmHandler.checkChangesSinceRevision(pom4.getParentFile(), "1234")).thenReturn(true);
 
-    when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);;
+    when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
 
     when(this.mockScmHandler.getNextRevisionId(pom1.getParentFile())).thenReturn("1234");
     when(this.mockScmHandler.getNextRevisionId(pom4.getParentFile())).thenReturn("1234");
@@ -304,13 +297,6 @@ public class NonSnapshotUpdateVersionsMojoTest {
     MavenModule wsArtifact4 = new MavenModule(pom4, "nonblocking.at", "test3", "2.1.0-FIX1-1234");
     MavenModule wsArtifact5 = new MavenModule(pom5, "nonblocking.at", "test3", "${test.version}"); // Invalid version
 
-    List<MavenModule> artifactList = new ArrayList<>();
-    artifactList.add(wsArtifact1);
-    artifactList.add(wsArtifact2);
-    artifactList.add(wsArtifact3);
-    artifactList.add(wsArtifact4);
-    artifactList.add(wsArtifact5);
-
     MavenProject mavenProject = new MavenProject();
     mavenProject.setFile(new File("target"));
 
@@ -324,7 +310,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockScmHandler.checkChangesSinceRevision(pom2.getParentFile(), "1234")).thenReturn(false);
     when(this.mockScmHandler.checkChangesSinceRevision(pom4.getParentFile(), "1234")).thenReturn(true);
 
-    when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);;
+    when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
 
     when(this.mockScmHandler.getNextRevisionId(pom1.getParentFile())).thenReturn("1234");
     when(this.mockScmHandler.getNextRevisionId(pom4.getParentFile())).thenReturn("1234");
@@ -471,7 +457,6 @@ public class NonSnapshotUpdateVersionsMojoTest {
     assertEquals("1.0.13-6677", wsArtifact2.getNewVersion());
   }
 
-
   @Test
   public void testNoUpdate() throws Exception {
     Model model1 = new Model();
@@ -512,8 +497,6 @@ public class NonSnapshotUpdateVersionsMojoTest {
     }
 
     MavenModule wsArtifact1 = new MavenModule(pom1, "at.nonblocking", "test3", "1.0.0-1222");
-    List<MavenModule> artifactList = new ArrayList<>();
-    artifactList.add(wsArtifact1);
 
     MavenProject mavenProject = new MavenProject();
     mavenProject.setFile(new File("target"));
@@ -522,7 +505,6 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
 
-    //when(this.mockScmHandler.getRevisionId(pom1.getParentFile())).thenReturn("1333");
     when(this.mockScmHandler.getNextRevisionId(pom1.getParentFile())).thenReturn("1444");
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
 
@@ -530,10 +512,10 @@ public class NonSnapshotUpdateVersionsMojoTest {
 
     assertTrue(dirtyModulesRegistry.exists());
 
-    BufferedReader reader = new BufferedReader(new FileReader(dirtyModulesRegistry));
-    assertNotNull(reader.readLine());
-    assertNull(reader.readLine());
-    reader.close();
+    try (BufferedReader reader = new BufferedReader(new FileReader(dirtyModulesRegistry))) {
+      assertNotNull(reader.readLine());
+      assertNull(reader.readLine());
+    }
   }
 
 }

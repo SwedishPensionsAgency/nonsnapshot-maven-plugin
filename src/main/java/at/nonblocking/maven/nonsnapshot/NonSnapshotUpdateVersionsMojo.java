@@ -171,7 +171,7 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
           mavenModule.setDirty(true);
 
         } else {
-          if (getScmType() == SCM_TYPE.SVN && isUseSvnRevisionQualifier()) {
+          if (getChangeTracker() == CHANGE_TRACKER.REVISION) {
             boolean changes = getScmHandler().checkChangesSinceRevision(mavenModule.getPomFile().getParentFile(), qualifierString);
             if (changes) {
               LOG.info("Module {}:{}: Revision number is different from the revision number in the version qualifier. Assigning a new version.", mavenModule.getGroupId(), mavenModule.getArtifactId());
@@ -265,7 +265,7 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
         if (!getScmHandler().isWorkingCopy(modulesPath)) {
           throw new NonSnapshotPluginException("Module path is no working directory: " + modulesPath);
         }
-        if (isUseSvnRevisionQualifier()) {
+        if (getChangeTracker() == CHANGE_TRACKER.REVISION && getScmType() == SCM_TYPE.SVN) {
           mavenModule.setNewVersion(getBaseVersion() + "-" + getScmHandler().getNextRevisionId(modulesPath));
         } else if (getModuleIncrementalVersionQualifier() == MODULE_INCREMENTAL_VERSION_QUALIFIER.BUILD_NUMBER) {
           mavenModule.setNewVersion(getBaseVersion()+ getIncrementalVersionSeparator() + getBuildNumber());
@@ -363,7 +363,14 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
   }
 
   private void storeChangeTrackerIdInExternalFile() {
-    String changeTrackerIdString = isUseSvnRevisionQualifier() ? getScmHandler().getNextRevisionId(getMavenProject().getBasedir()) : this.timestamp;
+    String changeTrackerIdString;
+    if (getChangeTracker() == CHANGE_TRACKER.REVISION && getScmType() == SCM_TYPE.SVN) {
+      changeTrackerIdString = getScmHandler().getNextRevisionId(getMavenProject().getBasedir());
+    } else if (getChangeTracker() == CHANGE_TRACKER.REVISION && getScmType() == SCM_TYPE.GIT) {
+      changeTrackerIdString = getScmHandler().getCurrentRevisionId(getMavenProject().getBasedir());
+    } else {
+      changeTrackerIdString = this.timestamp;
+    }
 
     File changeTrackerIdFile = getChangeTrackerIdFile();
     LOG.info("Storing used ChangeTrackerId in file: {}", changeTrackerIdFile.getAbsolutePath());

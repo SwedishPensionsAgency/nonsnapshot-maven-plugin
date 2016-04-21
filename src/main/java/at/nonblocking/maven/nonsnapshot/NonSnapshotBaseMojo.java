@@ -104,12 +104,15 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
 
   @Parameter(defaultValue = "${BUILD_NUMBER}")
   private String buildNumber;
-  
+
   @Parameter(defaultValue = "${INCREMENTAL_VERSION_SEPARATOR}")
   private String incrementalVersionSeparator;
 
   @Parameter(defaultValue = "false")
   private boolean useSvnRevisionQualifier;
+
+  @Parameter(defaultValue = "TIMESTAMP")
+  private CHANGE_TRACKER changeTracker;
 
   @Parameter(defaultValue = "false")
   private boolean storeChangeTrackerIdInExternalFile;
@@ -186,6 +189,13 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
 
   private void postProcessParameters() {
     excludeInvalidParameterCombinations();
+
+    if (useSvnRevisionQualifier) {
+      setScmType(SCM_TYPE.SVN);
+      setChangeTracker(CHANGE_TRACKER.REVISION);
+      setModuleIncrementalVersionQualifier(MODULE_INCREMENTAL_VERSION_QUALIFIER.REVISION);
+    }
+
     if (this.scmHandler == null) {
       LOG.debug("Lookup for ScmHandler implementation of type: {}", this.scmType);
 
@@ -209,8 +219,11 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
 
     this.processedUpstreamDependencies = this.upstreamDependencyHandler.processDependencyList(getUpstreamDependencies());
   }
-    
+
   private void excludeInvalidParameterCombinations() {
+    if (getScmType() == SCM_TYPE.GIT && getChangeTracker() == CHANGE_TRACKER.TIMESTAMP) {
+      throw new NonSnapshotPluginException("TIMESTAMP is not supported as CahngeTracker when using GIT, due to the fact that GIT timestamps might not be cronological on a single branch. Use REVISION instead.");
+    }
     if (getScmType() == SCM_TYPE.GIT && getModuleIncrementalVersionQualifier() == MODULE_INCREMENTAL_VERSION_QUALIFIER.REVISION) {
       throw new NonSnapshotPluginException("REVISION is not supported as ModuleIncrementalVersionQualifier when using GIT. Use TIMESTAMP or BUILD_NUMBER instead.");
     }
@@ -324,12 +337,17 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
     this.incrementalVersionSeparator = incrementalVersionSeparator;
   }
 
-  public boolean isUseSvnRevisionQualifier() {
-    return useSvnRevisionQualifier;
-  }
-
+  @Deprecated
   public void setUseSvnRevisionQualifier(boolean useSvnRevisionQualifier) {
     this.useSvnRevisionQualifier = useSvnRevisionQualifier;
+  }
+
+  public CHANGE_TRACKER getChangeTracker() {
+    return changeTracker;
+  }
+
+  public void setChangeTracker(CHANGE_TRACKER changeTracker) {
+    this.changeTracker = changeTracker;
   }
 
   public boolean isStoreChangeTrackerIdInExternalFile() {

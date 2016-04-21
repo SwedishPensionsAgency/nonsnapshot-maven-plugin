@@ -104,8 +104,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockScmHandler.getNextRevisionId(pom5.getParentFile().getCanonicalFile())).thenReturn("1234");
 
     this.nonSnapshotMojo.setScmType(SCM_TYPE.SVN);
-    this.nonSnapshotMojo.setUseSvnRevisionQualifier(true);
-
+    this.nonSnapshotMojo.setChangeTracker(CHANGE_TRACKER.REVISION);
     this.nonSnapshotMojo.execute();
 
     assertEquals("1.0.13-1234", wsArtifact1.getNewVersion());
@@ -182,7 +181,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
 
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
 
-    this.nonSnapshotMojo.setUseSvnRevisionQualifier(false);
+    this.nonSnapshotMojo.setChangeTracker(CHANGE_TRACKER.TIMESTAMP);
     this.nonSnapshotMojo.setTimestampQualifierPattern(pattern);
     this.nonSnapshotMojo.execute();
 
@@ -350,8 +349,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockScmHandler.getNextRevisionId(pom4.getParentFile())).thenReturn("1234");
     when(this.mockScmHandler.getNextRevisionId(pom5.getParentFile())).thenReturn("1234");
 
-    this.nonSnapshotMojo.setScmType(SCM_TYPE.SVN);
-    this.nonSnapshotMojo.setUseSvnRevisionQualifier(true);
+    this.nonSnapshotMojo.setChangeTracker(CHANGE_TRACKER.REVISION);
     this.nonSnapshotMojo.setGenerateIncrementalBuildScripts(true);
 
     this.nonSnapshotMojo.execute();
@@ -404,8 +402,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockScmHandler.getNextRevisionId(pom4.getParentFile())).thenReturn("1234");
     when(this.mockScmHandler.getNextRevisionId(pom5.getParentFile())).thenReturn("1234");
 
-    this.nonSnapshotMojo.setScmType(SCM_TYPE.SVN);
-    this.nonSnapshotMojo.setUseSvnRevisionQualifier(true);
+    this.nonSnapshotMojo.setChangeTracker(CHANGE_TRACKER.REVISION);
     this.nonSnapshotMojo.setGenerateChangedProjectsPropertyFile(true);
 
     this.nonSnapshotMojo.execute();
@@ -467,7 +464,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockUpstreamDependencyHandler.resolveLatestVersion(upstreamDep1, upstreamDependency, null, null, null)).thenReturn("5.0.1-1234");
 
     this.nonSnapshotMojo.setScmType(SCM_TYPE.SVN);
-    this.nonSnapshotMojo.setUseSvnRevisionQualifier(true);
+    this.nonSnapshotMojo.setChangeTracker(CHANGE_TRACKER.REVISION);
     this.nonSnapshotMojo.setUpstreamDependencies(upstreamDependencyString);
 
     this.nonSnapshotMojo.execute();
@@ -532,7 +529,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockUpstreamDependencyHandler.resolveLatestVersion(upstreamDep1, upstreamDependency, null, null, null)).thenReturn("5.0.1-1234");
 
     this.nonSnapshotMojo.setScmType(SCM_TYPE.SVN);
-    this.nonSnapshotMojo.setUseSvnRevisionQualifier(true);
+    this.nonSnapshotMojo.setChangeTracker(CHANGE_TRACKER.REVISION);
     this.nonSnapshotMojo.setUpstreamDependencies(upstreamDependencyString);
 
     this.nonSnapshotMojo.execute();
@@ -562,8 +559,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
 
-    this.nonSnapshotMojo.setScmType(SCM_TYPE.SVN);
-    this.nonSnapshotMojo.setUseSvnRevisionQualifier(true);
+    this.nonSnapshotMojo.setChangeTracker(CHANGE_TRACKER.REVISION);
 
     this.nonSnapshotMojo.execute();
 
@@ -701,7 +697,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockScmHandler.getNextRevisionId(this.nonSnapshotMojo.getMavenProject().getBasedir())).thenReturn(currentSVNRevision);
 
     this.nonSnapshotMojo.setScmType(SCM_TYPE.SVN);
-    this.nonSnapshotMojo.setUseSvnRevisionQualifier(true);
+    this.nonSnapshotMojo.setChangeTracker(CHANGE_TRACKER.REVISION);
     this.nonSnapshotMojo.setStoreChangeTrackerIdInExternalFile(true);
     this.nonSnapshotMojo.execute();
 
@@ -738,7 +734,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockScmHandler.getNextRevisionId(this.nonSnapshotMojo.getMavenProject().getBasedir())).thenReturn(currentSVNRevision);
 
     this.nonSnapshotMojo.setScmType(SCM_TYPE.SVN);
-    this.nonSnapshotMojo.setUseSvnRevisionQualifier(true);
+    this.nonSnapshotMojo.setChangeTracker(CHANGE_TRACKER.REVISION);
     this.nonSnapshotMojo.setStoreChangeTrackerIdInExternalFile(true);
     this.nonSnapshotMojo.execute();
 

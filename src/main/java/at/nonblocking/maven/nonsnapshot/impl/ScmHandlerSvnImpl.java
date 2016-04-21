@@ -46,9 +46,10 @@ public class ScmHandlerSvnImpl implements ScmHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(ScmHandlerSvnImpl.class);
 
-  private SVNClientManager svnClientManager = SVNClientManager.newInstance();
+  private final SVNClientManager svnClientManager = SVNClientManager.newInstance();
 
   private String cachedNextRevision;
+  private String cachedCurrentRevision;
 
   public ScmHandlerSvnImpl() {
   }
@@ -129,20 +130,31 @@ public class ScmHandlerSvnImpl implements ScmHandler {
   @Override
   public String getNextRevisionId(File path) {
     if (this.cachedNextRevision == null) {
-      try {
-        SVNInfo info = this.svnClientManager.getWCClient().doInfo(path, null);
-
-        LOG.debug("Try to obtain next revision of repository: {}", info.getRepositoryRootURL());
-
-        SVNRepository repository = this.svnClientManager.createRepository(info.getRepositoryRootURL(), false);
-
-        this.cachedNextRevision = String.valueOf(repository.getLatestRevision() + 1);
-      } catch (SVNException e) {
-        throw new NonSnapshotPluginException("Failed to obtain next revision number for path: " + path.getAbsolutePath(), e);
-      }
+      this.cachedNextRevision = String.valueOf(getGetCurrentRevisionFromRepository(path) + 1);
     }
-
     return this.cachedNextRevision;
+  }
+
+  @Override
+  public String getCurrentRevisionId(File path) {
+    if (this.cachedCurrentRevision == null) {
+      this.cachedCurrentRevision = String.valueOf(getGetCurrentRevisionFromRepository(path));
+    }
+    return this.cachedCurrentRevision;
+  }
+
+  private long getGetCurrentRevisionFromRepository(File path) throws NonSnapshotPluginException {
+    try {
+      SVNInfo info = this.svnClientManager.getWCClient().doInfo(path, null);
+
+      LOG.debug("Try to obtain current revision of repository: {}", info.getRepositoryRootURL());
+
+      SVNRepository repository = this.svnClientManager.createRepository(info.getRepositoryRootURL(), false);
+      return repository.getLatestRevision();
+
+    } catch (SVNException e) {
+      throw new NonSnapshotPluginException("Failed to obtain current revision number for path: " + path.getAbsolutePath(), e);
+    }
   }
 
   @Override

@@ -36,6 +36,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import static org.eclipse.jgit.lib.Constants.HEAD;
+import org.eclipse.jgit.lib.ObjectId;
 
 /**
  * GIT implementation of {@link at.nonblocking.maven.nonsnapshot.ScmHandler} based on JGit.
@@ -68,7 +70,24 @@ public class ScmHandlerGitImpl implements ScmHandler {
 
   @Override
   public boolean checkChangesSinceRevision(final File moduleDirectory, String revisionId) {
-    throw new RuntimeException("Operation checkChangesSinceRevision() not supported by the GIT handler");
+    try {
+      String modulePath = PathUtil.relativePath(this.baseDir, moduleDirectory);
+      final ObjectId revisionIdObj = ObjectId.fromString(revisionId);
+      final ObjectId head = this.git.getRepository().resolve(HEAD);
+      final LogCommand logCommand = this.git.log()
+              .addRange(revisionIdObj, head)
+              .setMaxCount(1);
+
+      if (!modulePath.isEmpty()) {
+        logCommand.addPath(modulePath);
+      }
+
+      return logCommand.call().iterator().hasNext();
+
+    } catch (IOException | GitAPIException e) {
+      LOG.warn("Failed to check changes for path: {}" + moduleDirectory.getAbsolutePath(), e);
+      return true;
+    }
   }
 
   @Override
@@ -112,6 +131,24 @@ public class ScmHandlerGitImpl implements ScmHandler {
   @Override
   public String getNextRevisionId(File path) {
     throw new RuntimeException("Operation getNextRevisionId() not supported by the GIT handler");
+  }
+
+  @Override
+  public String getCurrentRevisionId(File path) {
+    try {
+      String modulePath = PathUtil.relativePath(this.baseDir, path);
+      final LogCommand logCommand = this.git.log()
+              .setMaxCount(1);
+
+      if (!modulePath.isEmpty()) {
+        logCommand.addPath(modulePath);
+      }
+
+      return logCommand.call().iterator().next().getId().name();
+
+    } catch (IOException | GitAPIException e) {
+      throw new NonSnapshotPluginException("Failed to obtain current revision number for path: " + path.getAbsolutePath(), e);
+    }
   }
 
   @Override

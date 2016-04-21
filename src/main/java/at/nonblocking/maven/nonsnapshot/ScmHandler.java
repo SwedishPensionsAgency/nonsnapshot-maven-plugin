@@ -66,6 +66,14 @@ public interface ScmHandler {
   String getNextRevisionId(File path);
 
   /**
+   * Get the current revision number for this path.
+   *
+   * @param path File
+   * @return String
+   */
+  String getCurrentRevisionId(File path);
+  
+  /**
    * Commit the given path to the remote repository.
    *
    * @param files         List<File>

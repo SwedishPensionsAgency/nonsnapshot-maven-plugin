@@ -31,9 +31,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import org.eclipse.jgit.api.errors.GitAPIException;
 
 /**
  * GIT implementation of {@link at.nonblocking.maven.nonsnapshot.ScmHandler} based on JGit.
@@ -79,8 +81,8 @@ public class ScmHandlerGitImpl implements ScmHandler {
       String modulePath = PathUtil.relativePath(this.baseDir, moduleDirectory);
 
       LogCommand logCommand = this.git
-          .log()
-          .setMaxCount(100);
+              .log()
+              .setMaxCount(100);
 
       if (!modulePath.isEmpty()) {
         logCommand.addPath(modulePath);
@@ -91,7 +93,7 @@ public class ScmHandlerGitImpl implements ScmHandler {
         if (commitTime.after(date)) {
           if (!commit.getFullMessage().startsWith(NONSNAPSHOT_COMMIT_MESSAGE_PREFIX)) {
             LOG.debug("Module folder {}: Change since last commit: rev{} @ {} ({})",
-                new Object[]{moduleDirectory.getAbsolutePath(), commit.getId(), commitTime, commit.getFullMessage()});
+                    new Object[]{moduleDirectory.getAbsolutePath(), commit.getId(), commitTime, commit.getFullMessage()});
             return true;
           }
         } else {
@@ -99,7 +101,7 @@ public class ScmHandlerGitImpl implements ScmHandler {
         }
       }
 
-    } catch (Exception e) {
+    } catch (IOException | GitAPIException e) {
       LOG.warn("Failed to check changes for path: {}" + moduleDirectory.getAbsolutePath(), e);
       return true;
     }
@@ -122,30 +124,29 @@ public class ScmHandlerGitImpl implements ScmHandler {
 
         LOG.debug("Git: Adding file: {}", filePath);
         this.git
-            .add()
-            .addFilepattern(filePath)
-            .call();
+                .add()
+                .addFilepattern(filePath)
+                .call();
       }
 
       LOG.debug("Git: Committing changes");
       this.git
-          .commit()
-          .setMessage(commitMessage)
-          .call();
+              .commit()
+              .setMessage(commitMessage)
+              .call();
 
       if (this.doPush) {
         LOG.debug("Git: Pushing changes");
         this.git
-            .push()
-            .setCredentialsProvider(this.credentialsProvider)
-            .call();
+                .push()
+                .setCredentialsProvider(this.credentialsProvider)
+                .call();
       }
 
-    } catch (Exception e) {
+    } catch (IOException | GitAPIException e) {
       throw new NonSnapshotPluginException("Failed to commit files!", e);
     }
   }
-
 
   @Override
   public void init(File baseDir, String scmUser, String scmPassword, Properties properties) {
@@ -187,8 +188,8 @@ public class ScmHandlerGitImpl implements ScmHandler {
 
   private static class UsernamePasswordAndPassphraseCredentialProvider extends CredentialsProvider {
 
-    private String username;
-    private String password;
+    private final String username;
+    private final String password;
 
     private UsernamePasswordAndPassphraseCredentialProvider(String username, String password) {
       this.username = username;

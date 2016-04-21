@@ -38,6 +38,8 @@ import org.slf4j.LoggerFactory;
 
 import at.nonblocking.maven.nonsnapshot.exception.NonSnapshotPluginException;
 import at.nonblocking.maven.nonsnapshot.model.MavenModule;
+import java.io.BufferedReader;
+import java.io.FileReader;
 
 /**
  * Main Goal of this Plugin. <br/>
@@ -88,6 +90,10 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
     dumpArtifactTreeToLog(rootModule);
 
     writeAndCommitArtifacts(mavenModules);
+
+    if (isStoreChangeTrackerIdInExternalFile()) {
+      storeChangeTrackerIdInExternalFile();
+    }
   }
 
   private List<MavenModule> buildModules(List<Model> mavenModels) {
@@ -134,7 +140,9 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
   }
 
   private void markDirtyWhenRevisionChangedOrInvalidQualifier(List<MavenModule> mavenModules) {
+    final String storedChangeTrackerId = isStoreChangeTrackerIdInExternalFile() ? readChangeTrackerIdFromExternalFile() : null;
     for (MavenModule mavenModule : mavenModules) {
+      String qualifierString = storedChangeTrackerId;
       if (mavenModule.getVersion() == null) {
         LOG.info("No version found for artifact {}:{}. Assigning a new version.", mavenModule.getGroupId(), mavenModule.getArtifactId());
         mavenModule.setDirty(true);
@@ -143,10 +151,13 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
         LOG.info("Version property found for artifact {}:{}. Assigning a new version.", mavenModule.getGroupId(), mavenModule.getArtifactId());
         mavenModule.setDirty(true);
 
+      } else if (isStoreChangeTrackerIdInExternalFile() && qualifierString == null) {
+        LOG.info("No previous ChangeTrackerId found. Assigning a new version for artifact {}:{}.", mavenModule.getGroupId(), mavenModule.getArtifactId());
+        mavenModule.setDirty(true);
+
       } else {
         String[] versionParts = mavenModule.getVersion().split("-");
-        String qualifierString = null;
-        if (versionParts.length > 1) {
+        if (qualifierString == null && versionParts.length > 1) {
           qualifierString = versionParts[versionParts.length - 1];
         }
 
@@ -172,7 +183,12 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
             boolean changes;
 
             try {
-              Date versionTimestamp = new SimpleDateFormat(getTimestampQualifierPattern()).parse(qualifierString);
+              Date versionTimestamp;
+              if (isStoreChangeTrackerIdInExternalFile()) {
+                versionTimestamp = new SimpleDateFormat(getTimestampQualifierPattern()).parse(readChangeTrackerIdFromExternalFile());
+              } else {
+                versionTimestamp = new SimpleDateFormat(getTimestampQualifierPattern()).parse(qualifierString);
+              }
               changes = getScmHandler().checkChangesSinceDate(mavenModule.getPomFile().getParentFile(), versionTimestamp);
             } catch (ParseException e) {
               LOG.debug("Module {}:{}: Invalid timestamp qualifier: {}",
@@ -341,6 +357,35 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
 
     } catch (IOException e) {
       LOG.error("Failed to write changed projects property file!", e);
+    }
+  }
+
+  private void storeChangeTrackerIdInExternalFile() {
+    String changeTrackerIdString = isUseSvnRevisionQualifier() ? getScmHandler().getNextRevisionId(getMavenProject().getBasedir()) : this.timestamp;
+
+    File changeTrackerIdFile = getChangeTrackerIdFile();
+    LOG.info("Storing used ChangeTrackerId in file: {}", changeTrackerIdFile.getAbsolutePath());
+
+    try (PrintWriter writer = new PrintWriter(changeTrackerIdFile)) {
+      writer.write(changeTrackerIdString);
+      writer.close();
+    } catch (IOException e) {
+      LOG.error("Failed to write used ChangeTrackerId to file!", e);
+    }
+  }
+
+  private File getChangeTrackerIdFile() {
+    return new File(getMavenProject().getBasedir(), "lastUsedChangeTracker.txt");
+  }
+
+  private String readChangeTrackerIdFromExternalFile() {
+    File changeTrackerIdFile = getChangeTrackerIdFile();
+    LOG.info("Reading used ChangeTrackerId in file: {}", changeTrackerIdFile.getAbsolutePath());
+    try (BufferedReader reader = new BufferedReader(new FileReader(changeTrackerIdFile))) {
+      return reader.readLine();
+    } catch (IOException e) {
+      LOG.warn("Failed to read used ChangeTrackerId from file {}", changeTrackerIdFile.getAbsolutePath());
+      return null;
     }
   }
 

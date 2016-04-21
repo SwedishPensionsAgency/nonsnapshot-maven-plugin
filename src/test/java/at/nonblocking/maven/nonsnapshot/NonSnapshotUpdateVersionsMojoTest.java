@@ -24,6 +24,7 @@ import org.mockito.stubbing.Answer;
 import org.slf4j.impl.StaticLoggerBinder;
 
 import at.nonblocking.maven.nonsnapshot.model.MavenModule;
+import java.io.PrintWriter;
 
 public class NonSnapshotUpdateVersionsMojoTest {
 
@@ -518,4 +519,153 @@ public class NonSnapshotUpdateVersionsMojoTest {
     }
   }
 
+  @Test
+  public void testStoreChangeTrackerIdInExternalFile_Timestamp() throws Exception {
+    String lastUsedTimestamp = "20010908";
+    File lastUsedChangeTrackerRegistry = new File("target/lastUsedChangeTracker.txt");
+    try (PrintWriter writer = new PrintWriter(lastUsedChangeTrackerRegistry)) {
+      writer.write(lastUsedTimestamp);
+      writer.close();
+    }
+
+    String pattern = "yyyyMMdd";
+    final SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+    String currentTimestamp = dateFormat.format(new Date());
+
+    Model model1 = new Model();
+    File pom1 = new File("test1/pom.xm");
+    MavenModule wsArtifact1 = new MavenModule(pom1, "at.nonblocking", "test3", "1.0.0-1222");
+
+    when(this.mockModuleTraverser.findAllModules(this.nonSnapshotMojo.getMavenProject(), Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1));
+    when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
+    when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
+
+    this.nonSnapshotMojo.setTimestampQualifierPattern(pattern);
+    this.nonSnapshotMojo.setStoreChangeTrackerIdInExternalFile(true);
+    this.nonSnapshotMojo.execute();
+
+    assertTrue(lastUsedChangeTrackerRegistry.exists());
+
+    try (BufferedReader reader = new BufferedReader(new FileReader(lastUsedChangeTrackerRegistry))) {
+      final String firstLine = reader.readLine();
+      assertNotNull(firstLine);
+      assertEquals(currentTimestamp, firstLine);
+      assertNull(reader.readLine());
+    }
+
+    verify(this.mockScmHandler, times(1)).checkChangesSinceDate(pom1.getParentFile(), dateFormat.parse(lastUsedTimestamp));
+
+    lastUsedChangeTrackerRegistry.delete();
+  }
+
+  @Test
+  public void testStoreChangeTrackerIdInExternalFile_Timestamp_fileMissing() throws Exception {
+    File lastUsedChangeTrackerRegistry = new File("target/lastUsedChangeTracker.txt");
+    if (lastUsedChangeTrackerRegistry.exists()) {
+      lastUsedChangeTrackerRegistry.delete();
+    }
+
+    String pattern = "yyyyMMdd";
+    final SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
+    String currentTimestamp = dateFormat.format(new Date());
+
+    Model model1 = new Model();
+    File pom1 = new File("test1/pom.xm");
+    MavenModule wsArtifact1 = new MavenModule(pom1, "at.nonblocking", "test3", "1.0.0-1222");
+
+    when(this.mockModuleTraverser.findAllModules(this.nonSnapshotMojo.getMavenProject(), Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1));
+    when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
+    when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
+
+    this.nonSnapshotMojo.setTimestampQualifierPattern(pattern);
+    this.nonSnapshotMojo.setStoreChangeTrackerIdInExternalFile(true);
+    this.nonSnapshotMojo.execute();
+
+    assertTrue(lastUsedChangeTrackerRegistry.exists());
+
+    try (BufferedReader reader = new BufferedReader(new FileReader(lastUsedChangeTrackerRegistry))) {
+      final String firstLine = reader.readLine();
+      assertNotNull(firstLine);
+      assertEquals(currentTimestamp, firstLine);
+      assertNull(reader.readLine());
+    }
+
+    verify(this.mockScmHandler, never()).checkChangesSinceDate(eq(pom1.getParentFile()), any(Date.class));
+  }
+
+  @Test
+  public void testStoreChangeTrackerIdInExternalFile_SvnRevision() throws Exception {
+    String lastUsedSVNRevision = "1234";
+    File lastUsedChangeTrackerRegistry = new File("target/lastUsedChangeTracker.txt");
+    try (PrintWriter writer = new PrintWriter(lastUsedChangeTrackerRegistry)) {
+      writer.write(lastUsedSVNRevision);
+      writer.close();
+    }
+
+    String currentSVNRevision = "2345";
+
+    Model model1 = new Model();
+    File pom1 = new File("test1/pom.xm");
+    MavenModule wsArtifact1 = new MavenModule(pom1, "at.nonblocking", "test3", "1.0.0-1222");
+
+    when(this.mockModuleTraverser.findAllModules(this.nonSnapshotMojo.getMavenProject(), Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1));
+    when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
+    when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
+    when(this.mockScmHandler.getNextRevisionId(this.nonSnapshotMojo.getMavenProject().getBasedir())).thenReturn(currentSVNRevision);
+
+    this.nonSnapshotMojo.setScmType(SCM_TYPE.SVN);
+    this.nonSnapshotMojo.setUseSvnRevisionQualifier(true);
+    this.nonSnapshotMojo.setStoreChangeTrackerIdInExternalFile(true);
+    this.nonSnapshotMojo.execute();
+
+    assertTrue(lastUsedChangeTrackerRegistry.exists());
+
+    try (BufferedReader reader = new BufferedReader(new FileReader(lastUsedChangeTrackerRegistry))) {
+      final String firstLine = reader.readLine();
+      assertNotNull(firstLine);
+      assertEquals(currentSVNRevision, firstLine);
+      assertNull(reader.readLine());
+    }
+
+    verify(this.mockScmHandler, times(1)).checkChangesSinceRevision(pom1.getParentFile(), lastUsedSVNRevision);
+
+    lastUsedChangeTrackerRegistry.delete();
+  }
+  
+  @Test
+  public void testStoreChangeTrackerIdInExternalFile_SvnRevision_FileMissing() throws Exception {
+    File lastUsedChangeTrackerRegistry = new File("target/lastUsedChangeTracker.txt");
+    if (lastUsedChangeTrackerRegistry.exists()) {
+      lastUsedChangeTrackerRegistry.delete();
+    }
+
+    String currentSVNRevision = "2345";
+
+    Model model1 = new Model();
+    File pom1 = new File("test1/pom.xm");
+    MavenModule wsArtifact1 = new MavenModule(pom1, "at.nonblocking", "test3", "1.0.0-1222");
+
+    when(this.mockModuleTraverser.findAllModules(this.nonSnapshotMojo.getMavenProject(), Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1));
+    when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
+    when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
+    when(this.mockScmHandler.getNextRevisionId(this.nonSnapshotMojo.getMavenProject().getBasedir())).thenReturn(currentSVNRevision);
+
+    this.nonSnapshotMojo.setScmType(SCM_TYPE.SVN);
+    this.nonSnapshotMojo.setUseSvnRevisionQualifier(true);
+    this.nonSnapshotMojo.setStoreChangeTrackerIdInExternalFile(true);
+    this.nonSnapshotMojo.execute();
+
+    assertTrue(lastUsedChangeTrackerRegistry.exists());
+
+    try (BufferedReader reader = new BufferedReader(new FileReader(lastUsedChangeTrackerRegistry))) {
+      final String firstLine = reader.readLine();
+      assertNotNull(firstLine);
+      assertEquals(currentSVNRevision, firstLine);
+      assertNull(reader.readLine());
+    }
+
+    verify(this.mockScmHandler, never()).checkChangesSinceRevision(eq(pom1.getParentFile()), any(String.class));
+
+    lastUsedChangeTrackerRegistry.delete();
+  }
 }

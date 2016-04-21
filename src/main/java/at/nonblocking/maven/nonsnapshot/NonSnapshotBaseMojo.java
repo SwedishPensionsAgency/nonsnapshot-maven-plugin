@@ -102,6 +102,9 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
   @Parameter(defaultValue = "false")
   private boolean useSvnRevisionQualifier;
 
+  @Parameter(defaultValue = "false")
+  private boolean storeChangeTrackerIdInExternalFile;
+
   @Parameter(defaultValue = DEFAULT_TIMESTAMP_QUALIFIER_PATTERN)
   private String timestampQualifierPattern = DEFAULT_TIMESTAMP_QUALIFIER_PATTERN;
 
@@ -284,6 +287,14 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
 
   public void setUseSvnRevisionQualifier(boolean useSvnRevisionQualifier) {
     this.useSvnRevisionQualifier = useSvnRevisionQualifier;
+  }
+
+  public boolean isStoreChangeTrackerIdInExternalFile() {
+    return storeChangeTrackerIdInExternalFile;
+  }
+
+  public void setStoreChangeTrackerIdInExternalFile(boolean storeChangeTrackerIdInExternalFile) {
+    this.storeChangeTrackerIdInExternalFile = storeChangeTrackerIdInExternalFile;
   }
 
   public String getTimestampQualifierPattern() {

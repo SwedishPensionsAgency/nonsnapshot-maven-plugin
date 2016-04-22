@@ -213,6 +213,93 @@ public class NonSnapshotUpdateVersionsMojoTest {
 
     inOrder.verify(this.mockScmHandler).commitFiles(Arrays.asList(pom1, pom3, pom4, pom5), ScmHandler.NONSNAPSHOT_COMMIT_MESSAGE_PREFIX + " Version of 4 artifacts updated");
   }
+  
+  @Test
+  public void testUpdateBuildNumberQualifiers() throws Exception {
+    String pattern = "yyyyMMdd";
+    Date currentTime = new Date();
+    final SimpleDateFormat df = new SimpleDateFormat(pattern);
+    String currentTimestamp = df.format(currentTime);
+    
+    File lastUsedChangeTrackerRegistry = new File("target/lastUsedChangeTracker.txt");
+    try (PrintWriter writer = new PrintWriter(lastUsedChangeTrackerRegistry)) {
+      writer.write(currentTimestamp);
+      writer.close();
+    }
+    
+    final String buildNumber = "25";
+    
+    Model model1 = new Model();
+    Model model2 = new Model();
+    Model model3 = new Model();
+    Model model4 = new Model();
+    Model model5 = new Model();
+
+    File pom1 = new File("test1/pom.xm");
+    File pom2 = new File("test2/pom.xm");
+    File pom3 = new File("test3/pom.xm");
+    File pom4 = new File("test4/pom.xm");
+    File pom5 = new File("test5/pom.xm");
+
+    MavenModule wsArtifact1 = new MavenModule(pom1, "nonblocking.at", "test1", "1.0.0-SNAPSHOT"); // Invalid version
+    MavenModule wsArtifact2 = new MavenModule(pom2, "nonblocking.at", "test2", "1.1.0-oldBuildNumber");
+    MavenModule wsArtifact3 = new MavenModule(pom3, "nonblocking.at", "test3", null); // Invalid version
+    MavenModule wsArtifact4 = new MavenModule(pom4, "nonblocking.at", "test3", "2.1.0-FIX1-1234");
+    MavenModule wsArtifact5 = new MavenModule(pom5, "nonblocking.at", "test3", "${test.version}"); // Invalid version
+
+    List<MavenModule> artifactList = new ArrayList<>();
+    artifactList.add(wsArtifact1);
+    artifactList.add(wsArtifact2);
+    artifactList.add(wsArtifact3);
+    artifactList.add(wsArtifact4);
+    artifactList.add(wsArtifact5);
+
+    MavenProject mavenProject = new MavenProject();
+    mavenProject.setFile(new File("target"));
+
+    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1, model2, model3, model4, model5));
+    when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
+    when(this.mockMavenPomHandler.readArtifact(model2)).thenReturn(wsArtifact2);
+    when(this.mockMavenPomHandler.readArtifact(model3)).thenReturn(wsArtifact3);
+    when(this.mockMavenPomHandler.readArtifact(model4)).thenReturn(wsArtifact4);
+    when(this.mockMavenPomHandler.readArtifact(model5)).thenReturn(wsArtifact5);
+
+    when(this.mockScmHandler.checkChangesSinceDate(pom1.getParentFile(), df.parse(currentTimestamp))).thenReturn(true);
+    when(this.mockScmHandler.checkChangesSinceDate(pom2.getParentFile(), df.parse(currentTimestamp))).thenReturn(false);
+    when(this.mockScmHandler.checkChangesSinceDate(pom4.getParentFile(), df.parse(currentTimestamp))).thenReturn(true);
+
+    when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
+
+    this.nonSnapshotMojo.setModuleIncrementalVersionQualifier(MODULE_INCREMENTAL_VERSION_QUALIFIER.BUILD_NUMBER);
+    this.nonSnapshotMojo.setBuildNumber(buildNumber);
+    this.nonSnapshotMojo.setStoreChangeTrackerIdInExternalFile(true);
+    this.nonSnapshotMojo.setTimestampQualifierPattern(pattern);
+    this.nonSnapshotMojo.execute();
+
+    assertEquals("1.0.13." + buildNumber, wsArtifact1.getNewVersion());
+    assertNull(wsArtifact2.getNewVersion());
+    assertNotNull(wsArtifact3.getNewVersion());
+    assertEquals("1.0.13." + buildNumber, wsArtifact4.getNewVersion());
+    assertEquals("1.0.13." + buildNumber, wsArtifact5.getNewVersion());
+
+    InOrder inOrder = inOrder(this.mockDependencyTreeProcessor, this.mockMavenPomHandler, this.mockScmHandler, this.mockModuleTraverser);
+
+    inOrder.verify(this.mockMavenPomHandler).readArtifact(model1);
+    inOrder.verify(this.mockMavenPomHandler).readArtifact(model2);
+    inOrder.verify(this.mockMavenPomHandler).readArtifact(model3);
+    inOrder.verify(this.mockMavenPomHandler).readArtifact(model4);
+    inOrder.verify(this.mockMavenPomHandler).readArtifact(model5);
+
+    inOrder.verify(this.mockDependencyTreeProcessor).buildDependencyTree(artifactList);
+
+    inOrder.verify(this.mockMavenPomHandler, times(1)).updateArtifact(wsArtifact1);
+    verify(this.mockMavenPomHandler, never()).updateArtifact(wsArtifact2);
+    verify(this.mockMavenPomHandler, times(1)).updateArtifact(wsArtifact3);
+    inOrder.verify(this.mockMavenPomHandler, times(1)).updateArtifact(wsArtifact4);
+    inOrder.verify(this.mockMavenPomHandler, times(1)).updateArtifact(wsArtifact5);
+
+    inOrder.verify(this.mockScmHandler).commitFiles(Arrays.asList(pom1, pom3, pom4, pom5), ScmHandler.NONSNAPSHOT_COMMIT_MESSAGE_PREFIX + " Version of 4 artifacts updated");
+  }
 
   @Test
   public void testIncrementalBuildScript() throws Exception {

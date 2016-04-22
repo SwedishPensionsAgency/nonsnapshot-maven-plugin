@@ -267,6 +267,8 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
         }
         if (isUseSvnRevisionQualifier()) {
           mavenModule.setNewVersion(getBaseVersion() + "-" + getScmHandler().getNextRevisionId(modulesPath));
+        } else if (getModuleIncrementalVersionQualifier() == MODULE_INCREMENTAL_VERSION_QUALIFIER.BUILD_NUMBER) {
+          mavenModule.setNewVersion(getBaseVersion()+ getIncrementalVersionSeparator() + getBuildNumber());
         } else {
           mavenModule.setNewVersion(getBaseVersion() + "-" + this.timestamp);
         }

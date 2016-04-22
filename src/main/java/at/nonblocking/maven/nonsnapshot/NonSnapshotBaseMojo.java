@@ -99,6 +99,15 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
   @Parameter(required = true)
   private String baseVersion;
 
+  @Parameter(defaultValue = "TIMESTAMP")
+  private MODULE_INCREMENTAL_VERSION_QUALIFIER moduleIncrementalVersionQualifier;
+
+  @Parameter(defaultValue = "${BUILD_NUMBER}")
+  private String buildNumber;
+  
+  @Parameter(defaultValue = "${INCREMENTAL_VERSION_SEPARATOR}")
+  private String incrementalVersionSeparator;
+
   @Parameter(defaultValue = "false")
   private boolean useSvnRevisionQualifier;
 
@@ -176,6 +185,7 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
   protected abstract void internalExecute();
 
   private void postProcessParameters() {
+    excludeInvalidParameterCombinations();
     if (this.scmHandler == null) {
       LOG.debug("Lookup for ScmHandler implementation of type: {}", this.scmType);
 
@@ -198,6 +208,15 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
     this.scmHandler.init(getMavenProject().getBasedir(), this.scmUser, this.scmPassword, properties);
 
     this.processedUpstreamDependencies = this.upstreamDependencyHandler.processDependencyList(getUpstreamDependencies());
+  }
+    
+  private void excludeInvalidParameterCombinations() {
+    if (getScmType() == SCM_TYPE.GIT && getModuleIncrementalVersionQualifier() == MODULE_INCREMENTAL_VERSION_QUALIFIER.REVISION) {
+      throw new NonSnapshotPluginException("REVISION is not supported as ModuleIncrementalVersionQualifier when using GIT. Use TIMESTAMP or BUILD_NUMBER instead.");
+    }
+    if (getModuleIncrementalVersionQualifier() == MODULE_INCREMENTAL_VERSION_QUALIFIER.BUILD_NUMBER && !isStoreChangeTrackerIdInExternalFile()) {
+      throw new NonSnapshotPluginException("When using BUILD_NUMBER as ModuleIncrementalVersionQualifier ChangeTrackerId must be stored in externl file. Use <storeChangeTrackerIdInExternalFile>true</storeChangeTrackerIdInExternalFile>.");
+    }
   }
 
   protected File getDirtyModulesRegistryFile() {
@@ -279,6 +298,30 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
 
   public void setBaseVersion(String baseVersion) {
     this.baseVersion = baseVersion;
+  }
+
+  public MODULE_INCREMENTAL_VERSION_QUALIFIER getModuleIncrementalVersionQualifier() {
+    return moduleIncrementalVersionQualifier;
+  }
+
+  public void setModuleIncrementalVersionQualifier(MODULE_INCREMENTAL_VERSION_QUALIFIER moduleIncrementalVersionQualifier) {
+    this.moduleIncrementalVersionQualifier = moduleIncrementalVersionQualifier;
+  }
+
+  public String getBuildNumber() {
+    return buildNumber;
+  }
+
+  public void setBuildNumber(String buildNumber) {
+    this.buildNumber = buildNumber;
+  }
+
+  public String getIncrementalVersionSeparator() {
+    return incrementalVersionSeparator != null ? incrementalVersionSeparator : ".";
+  }
+
+  public void setIncrementalVersionSeparator(String incrementalVersionSeparator) {
+    this.incrementalVersionSeparator = incrementalVersionSeparator;
   }
 
   public boolean isUseSvnRevisionQualifier() {

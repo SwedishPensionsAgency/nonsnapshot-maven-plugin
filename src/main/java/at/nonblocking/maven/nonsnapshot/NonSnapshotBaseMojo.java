@@ -119,6 +119,9 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
 
   @Parameter(defaultValue = DEFAULT_TIMESTAMP_QUALIFIER_PATTERN)
   private String timestampQualifierPattern = DEFAULT_TIMESTAMP_QUALIFIER_PATTERN;
+  
+  @Parameter(defaultValue = "")
+  private String moduleSubPathTriggers;
 
   @Parameter
   private List<String> upstreamDependencies;
@@ -214,6 +217,7 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
 
     Properties properties = new Properties();
     properties.setProperty("gitDoPush", String.valueOf(this.gitDoPush));
+    properties.setProperty("moduleSubPathTriggers", this.moduleSubPathTriggers != null ? this.moduleSubPathTriggers : "");
 
     this.scmHandler.init(getMavenProject().getBasedir(), this.scmUser, this.scmPassword, properties);
 
@@ -222,13 +226,16 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
 
   private void excludeInvalidParameterCombinations() {
     if (getScmType() == SCM_TYPE.GIT && getChangeTracker() == CHANGE_TRACKER.TIMESTAMP) {
-      throw new NonSnapshotPluginException("TIMESTAMP is not supported as CahngeTracker when using GIT, due to the fact that GIT timestamps might not be cronological on a single branch. Use REVISION instead.");
+      throw new NonSnapshotPluginException("TIMESTAMP is not supported as ChangeTracker when using GIT, due to the fact that GIT timestamps might not be cronological on a single branch. Use REVISION instead.");
     }
     if (getScmType() == SCM_TYPE.GIT && getModuleIncrementalVersionQualifier() == MODULE_INCREMENTAL_VERSION_QUALIFIER.REVISION) {
       throw new NonSnapshotPluginException("REVISION is not supported as ModuleIncrementalVersionQualifier when using GIT. Use TIMESTAMP or BUILD_NUMBER instead.");
     }
     if (getModuleIncrementalVersionQualifier() == MODULE_INCREMENTAL_VERSION_QUALIFIER.BUILD_NUMBER && !isStoreChangeTrackerIdInExternalFile()) {
       throw new NonSnapshotPluginException("When using BUILD_NUMBER as ModuleIncrementalVersionQualifier ChangeTrackerId must be stored in externl file. Use <storeChangeTrackerIdInExternalFile>true</storeChangeTrackerIdInExternalFile>.");
+    }
+    if (getScmType() != SCM_TYPE.GIT && this.moduleSubPathTriggers != null && !this.moduleSubPathTriggers.isEmpty()){
+      throw new NonSnapshotPluginException("The parameter ModuleSubPathTriggers is only implemented for use with GIT.");
     }
   }
 

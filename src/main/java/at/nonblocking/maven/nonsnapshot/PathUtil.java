@@ -21,4 +21,11 @@ public final class PathUtil {
     return relativeModuleDir.replaceAll("\\\\", "/");
   }
 
+  public static String getFullSubPath(File moduleDirectory, String subPath) throws IOException {
+    return moduleDirectory.getAbsolutePath() + File.separator + subPath;
+  }
+
+  public static boolean doFilePathExists(String filePath) throws IOException {
+    return new File(filePath).exists();
+  }
 }

@@ -53,6 +53,7 @@ public class ScmHandlerGitImpl implements ScmHandler {
   private Git git;
   private CredentialsProvider credentialsProvider;
   private boolean doPush = true;
+  private String moduleSubPathTriggers;
 
   static {
     SshSessionFactory.setInstance(new JschConfigSessionFactory() {
@@ -71,22 +72,33 @@ public class ScmHandlerGitImpl implements ScmHandler {
   @Override
   public boolean checkChangesSinceRevision(final File moduleDirectory, String revisionId) {
     try {
-      String modulePath = PathUtil.relativePath(this.baseDir, moduleDirectory);
       final ObjectId revisionIdObj = ObjectId.fromString(revisionId);
       final ObjectId head = this.git.getRepository().resolve(HEAD);
       final LogCommand logCommand = this.git.log()
               .addRange(revisionIdObj, head)
               .setMaxCount(1);
 
-      if (!modulePath.isEmpty()) {
-        logCommand.addPath(modulePath);
-      }
+      addPaths(logCommand, moduleDirectory);
 
       return logCommand.call().iterator().hasNext();
 
     } catch (IOException | GitAPIException e) {
       LOG.warn("Failed to check changes for path: {}" + moduleDirectory.getAbsolutePath(), e);
       return true;
+    }
+  }
+
+  private void addPaths(final LogCommand logCommand, final File moduleDirectory) throws IOException {
+    for (String subPath : this.moduleSubPathTriggers.split(",")) {
+      if (!subPath.isEmpty()) {
+        String moduleFullPath = PathUtil.getFullSubPath(moduleDirectory, subPath.trim());
+        if (PathUtil.doFilePathExists(moduleFullPath)) {
+          String modulePath = PathUtil.relativePath(this.baseDir, new File(moduleFullPath));
+          if (!modulePath.isEmpty()) {
+            logCommand.addPath(modulePath);
+          }
+        }
+      }
     }
   }
 
@@ -97,15 +109,11 @@ public class ScmHandlerGitImpl implements ScmHandler {
     }
 
     try {
-      String modulePath = PathUtil.relativePath(this.baseDir, moduleDirectory);
-
       LogCommand logCommand = this.git
               .log()
               .setMaxCount(100);
 
-      if (!modulePath.isEmpty()) {
-        logCommand.addPath(modulePath);
-      }
+      addPaths(logCommand, moduleDirectory);
 
       for (RevCommit commit : logCommand.call()) {
         Date commitTime = new Date(commit.getCommitTime() * 1000L);
@@ -204,6 +212,10 @@ public class ScmHandlerGitImpl implements ScmHandler {
       if (properties != null && "false".equals(properties.getProperty("gitDoPush"))) {
         this.doPush = false;
         LOG.info("GIT push is disabled");
+      }
+      if (properties != null) {
+        this.moduleSubPathTriggers = properties.getProperty("moduleSubPathTriggers");
+        LOG.info("Using ModuleSubPathTriggers: " + this.moduleSubPathTriggers);
       }
 
     } catch (Exception e) {

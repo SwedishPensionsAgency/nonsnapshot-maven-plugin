@@ -25,6 +25,7 @@ import org.slf4j.impl.StaticLoggerBinder;
 
 import at.nonblocking.maven.nonsnapshot.model.MavenModule;
 import java.io.PrintWriter;
+import static java.util.Arrays.asList;
 
 public class NonSnapshotUpdateVersionsMojoTest {
 
@@ -34,6 +35,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
   private final MavenPomHandler mockMavenPomHandler = mock(MavenPomHandler.class);
   private final ScmHandler mockScmHandler = mock(ScmHandler.class);
   private final UpstreamDependencyHandler mockUpstreamDependencyHandler = mock(UpstreamDependencyHandler.class);
+  private final DirtyModulesDependencyOrderResolver mockDirtyModulesDependencyOrderResolver = mock(DirtyModulesDependencyOrderResolver.class);
 
   @BeforeClass
   public static void setupLog() {
@@ -55,6 +57,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     this.nonSnapshotMojo.setMavenPomHandler(this.mockMavenPomHandler);
     this.nonSnapshotMojo.setScmHandler(this.mockScmHandler);
     this.nonSnapshotMojo.setUpstreamDependencyHandler(this.mockUpstreamDependencyHandler);
+    this.nonSnapshotMojo.setDirtyModulesDependencyOrderResolver(mockDirtyModulesDependencyOrderResolver);
   }
 
   @Test
@@ -97,6 +100,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockScmHandler.checkChangesSinceRevision(pom2.getParentFile(), "1234")).thenReturn(false);
     when(this.mockScmHandler.checkChangesSinceRevision(pom4.getParentFile(), "1234")).thenReturn(true);
 
+    when(this.mockDirtyModulesDependencyOrderResolver.sortDirtyModulesInDependencyOrder(artifactList)).thenReturn(artifactList);
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
 
     when(this.mockScmHandler.getNextRevisionId(pom1.getParentFile().getCanonicalFile())).thenReturn("1234");
@@ -180,6 +184,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockScmHandler.checkChangesSinceRevision(pom4.getParentFile(), "1234")).thenReturn(true);
 
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
+    when(this.mockDirtyModulesDependencyOrderResolver.sortDirtyModulesInDependencyOrder(artifactList)).thenReturn(artifactList);
 
     this.nonSnapshotMojo.setChangeTracker(CHANGE_TRACKER.TIMESTAMP);
     this.nonSnapshotMojo.setTimestampQualifierPattern(pattern);
@@ -212,22 +217,22 @@ public class NonSnapshotUpdateVersionsMojoTest {
 
     inOrder.verify(this.mockScmHandler).commitFiles(Arrays.asList(pom1, pom3, pom4, pom5), ScmHandler.NONSNAPSHOT_COMMIT_MESSAGE_PREFIX + " Version of 4 artifacts updated");
   }
-  
+
   @Test
   public void testUpdateBuildNumberQualifiers() throws Exception {
     String pattern = "yyyyMMdd";
     Date currentTime = new Date();
     final SimpleDateFormat df = new SimpleDateFormat(pattern);
     String currentTimestamp = df.format(currentTime);
-    
+
     File lastUsedChangeTrackerRegistry = new File("target/lastUsedChangeTracker.txt");
     try (PrintWriter writer = new PrintWriter(lastUsedChangeTrackerRegistry)) {
       writer.write(currentTimestamp);
       writer.close();
     }
-    
+
     final String buildNumber = "25";
-    
+
     Model model1 = new Model();
     Model model2 = new Model();
     Model model3 = new Model();
@@ -268,6 +273,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockScmHandler.checkChangesSinceDate(pom4.getParentFile(), df.parse(currentTimestamp))).thenReturn(true);
 
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
+    when(this.mockDirtyModulesDependencyOrderResolver.sortDirtyModulesInDependencyOrder(artifactList)).thenReturn(artifactList);
 
     this.nonSnapshotMojo.setModuleIncrementalVersionQualifier(MODULE_INCREMENTAL_VERSION_QUALIFIER.BUILD_NUMBER);
     this.nonSnapshotMojo.setBuildNumber(buildNumber);
@@ -333,7 +339,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     MavenProject mavenProject = new MavenProject();
     mavenProject.setFile(new File("target"));
 
-    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1, model2, model3, model4, model5));
+    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(asList(model1, model2, model3, model4, model5));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockMavenPomHandler.readArtifact(model2)).thenReturn(wsArtifact2);
     when(this.mockMavenPomHandler.readArtifact(model3)).thenReturn(wsArtifact3);
@@ -344,6 +350,8 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockScmHandler.checkChangesSinceRevision(pom4.getParentFile(), "1234")).thenReturn(true);
 
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
+    List<MavenModule> artifactList = asList(wsArtifact1, wsArtifact2, wsArtifact3, wsArtifact4, wsArtifact5);
+    when(this.mockDirtyModulesDependencyOrderResolver.sortDirtyModulesInDependencyOrder(artifactList)).thenReturn(artifactList);
 
     when(this.mockScmHandler.getNextRevisionId(pom1.getParentFile())).thenReturn("1234");
     when(this.mockScmHandler.getNextRevisionId(pom4.getParentFile())).thenReturn("1234");
@@ -396,6 +404,8 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockScmHandler.checkChangesSinceRevision(pom2.getParentFile(), "1234")).thenReturn(false);
     when(this.mockScmHandler.checkChangesSinceRevision(pom4.getParentFile(), "1234")).thenReturn(true);
 
+    List<MavenModule> artifactList = asList(wsArtifact1, wsArtifact2, wsArtifact3, wsArtifact4, wsArtifact5);
+    when(this.mockDirtyModulesDependencyOrderResolver.sortDirtyModulesInDependencyOrder(artifactList)).thenReturn(artifactList);
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
 
     when(this.mockScmHandler.getNextRevisionId(pom1.getParentFile())).thenReturn("1234");
@@ -591,6 +601,8 @@ public class NonSnapshotUpdateVersionsMojoTest {
 
     when(this.mockScmHandler.getNextRevisionId(pom1.getParentFile())).thenReturn("1444");
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
+    List<MavenModule> artifactList = asList(wsArtifact1);
+    when(this.mockDirtyModulesDependencyOrderResolver.sortDirtyModulesInDependencyOrder(artifactList)).thenReturn(artifactList);
 
     this.nonSnapshotMojo.execute();
 
@@ -622,6 +634,8 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockModuleTraverser.findAllModules(this.nonSnapshotMojo.getMavenProject(), Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
+    List<MavenModule> artifactList = asList(wsArtifact1);
+    when(this.mockDirtyModulesDependencyOrderResolver.sortDirtyModulesInDependencyOrder(artifactList)).thenReturn(artifactList);
 
     this.nonSnapshotMojo.setTimestampQualifierPattern(pattern);
     this.nonSnapshotMojo.setStoreChangeTrackerIdInExternalFile(true);
@@ -695,6 +709,8 @@ public class NonSnapshotUpdateVersionsMojoTest {
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
     when(this.mockScmHandler.getNextRevisionId(this.nonSnapshotMojo.getMavenProject().getBasedir())).thenReturn(currentSVNRevision);
+    List<MavenModule> artifactList = asList(wsArtifact1);
+    when(this.mockDirtyModulesDependencyOrderResolver.sortDirtyModulesInDependencyOrder(artifactList)).thenReturn(artifactList);
 
     this.nonSnapshotMojo.setScmType(SCM_TYPE.SVN);
     this.nonSnapshotMojo.setChangeTracker(CHANGE_TRACKER.REVISION);
@@ -714,7 +730,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
 
     lastUsedChangeTrackerRegistry.delete();
   }
-  
+
   @Test
   public void testStoreChangeTrackerIdInExternalFile_SvnRevision_FileMissing() throws Exception {
     File lastUsedChangeTrackerRegistry = new File("target/lastUsedChangeTracker.txt");

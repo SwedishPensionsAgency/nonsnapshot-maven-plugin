@@ -40,6 +40,7 @@ import at.nonblocking.maven.nonsnapshot.exception.NonSnapshotPluginException;
 import at.nonblocking.maven.nonsnapshot.model.MavenModule;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import org.apache.maven.plugins.annotations.Component;
 
 /**
  * Main Goal of this Plugin. <br/>
@@ -58,6 +59,9 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
   private static final Logger LOG = LoggerFactory.getLogger(NonSnapshotUpdateVersionsMojo.class);
 
   private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+  
+  @Component(role = DirtyModulesDependencyOrderResolver.class, hint = "default")
+  private DirtyModulesDependencyOrderResolver dirtyModulesDependencyOrderResolver;
 
   private String timestamp;
 
@@ -110,7 +114,7 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
   protected void writeAndCommitArtifacts(List<MavenModule> mavenModules) {
     List<File> pomsToCommit = new ArrayList<>();
 
-    for (MavenModule mavenModule : mavenModules) {
+    for (MavenModule mavenModule : dirtyModulesDependencyOrderResolver.sortDirtyModulesInDependencyOrder(mavenModules)) {
       if (mavenModule.isDirty() && mavenModule.getNewVersion() != null) {
         getMavenPomHandler().updateArtifact(mavenModule);
         LOG.debug("Add module to dirty registry list: {}", mavenModule.getPomFile().getAbsolutePath());
@@ -432,5 +436,13 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     getDependencyTreeProcessor().printMavenModuleTree(rootModule, new PrintStream(baos));
     LOG.info("\n" + baos.toString());
+  }
+
+  public DirtyModulesDependencyOrderResolver getDirtyModulesDependencyOrderResolver() {
+    return dirtyModulesDependencyOrderResolver;
+  }
+
+  public void setDirtyModulesDependencyOrderResolver(DirtyModulesDependencyOrderResolver dirtyModulesDependencyOrderResolver) {
+    this.dirtyModulesDependencyOrderResolver = dirtyModulesDependencyOrderResolver;
   }
 }

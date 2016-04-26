@@ -34,9 +34,9 @@ public class MavenModule extends MavenArtifact {
   private MavenArtifact parent;
   private int parentVersionLocation;
 
-  private List<MavenModule> children = new ArrayList<MavenModule>();
+  private final List<MavenModule> children = new ArrayList<>();
 
-  private List<MavenModuleDependency> dependencies = new ArrayList<MavenModuleDependency>();
+  private final List<MavenModuleDependency> dependencies = new ArrayList<>();
 
   private String newVersion;
 

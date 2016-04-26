@@ -108,28 +108,28 @@ public class MavenPomHandlerDefaultImpl implements MavenPomHandler {
     // Parent
     if (model.getParent() != null) {
       mavenModule.setParent(new MavenArtifact(model.getParent().getGroupId(),
-          model.getParent().getArtifactId(), model.getParent().getVersion()));
+              model.getParent().getArtifactId(), model.getParent().getVersion()));
       mavenModule.setParentVersionLocation(getVersionLocation(model.getParent()));
     }
 
     // Dependencies
     for (Dependency dependency : model.getDependencies()) {
       mavenModule.getDependencies().add(new MavenModuleDependency(
-          getVersionLocation(dependency),
-          new MavenArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion())));
+              getVersionLocation(dependency),
+              new MavenArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion())));
     }
 
     // Plugins
     if (model.getBuild() != null) {
       for (Plugin plugin : model.getBuild().getPlugins()) {
         mavenModule.getDependencies().add(new MavenModuleDependency(
-            getVersionLocation(plugin),
-            new MavenArtifact(plugin.getGroupId(), plugin.getArtifactId(), plugin.getVersion())));
+                getVersionLocation(plugin),
+                new MavenArtifact(plugin.getGroupId(), plugin.getArtifactId(), plugin.getVersion())));
 
         for (Dependency dependency : plugin.getDependencies()) {
           mavenModule.getDependencies().add(new MavenModuleDependency(
-              getVersionLocation(dependency),
-              new MavenArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion())));
+                  getVersionLocation(dependency),
+                  new MavenArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion())));
         }
       }
     }
@@ -138,8 +138,8 @@ public class MavenPomHandlerDefaultImpl implements MavenPomHandler {
     for (Profile profile : model.getProfiles()) {
       for (Dependency dependency : profile.getDependencies()) {
         mavenModule.getDependencies().add(new MavenModuleDependency(
-            getVersionLocation(dependency),
-            new MavenArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion())));
+                getVersionLocation(dependency),
+                new MavenArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion())));
       }
     }
 
@@ -148,14 +148,13 @@ public class MavenPomHandlerDefaultImpl implements MavenPomHandler {
       if (profile.getBuild() != null) {
         for (Plugin plugin : profile.getBuild().getPlugins()) {
           mavenModule.getDependencies().add(new MavenModuleDependency(
-              getVersionLocation(plugin),
-              new MavenArtifact(plugin.getGroupId(), plugin.getArtifactId(), plugin.getVersion())));
-
+                  getVersionLocation(plugin),
+                  new MavenArtifact(plugin.getGroupId(), plugin.getArtifactId(), plugin.getVersion())));
 
           for (Dependency dependency : plugin.getDependencies()) {
             mavenModule.getDependencies().add(new MavenModuleDependency(
-                getVersionLocation(dependency),
-                new MavenArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion())));
+                    getVersionLocation(dependency),
+                    new MavenArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion())));
           }
         }
       }
@@ -222,6 +221,7 @@ public class MavenPomHandlerDefaultImpl implements MavenPomHandler {
     commands.add(new PomUpdateCommand(lineNumber, UPDATE_COMMAND_TYPE.REPLACE, "<version>.*?</version>", "<version>" + updatedUpstreamMavenArtifact.getNewVersion() + "</version>"));
   }
 
+  @SuppressWarnings("ConvertToTryWithResources")
   private void executeUpdateCommands(List<PomUpdateCommand> commands, File pomFile) {
     Map<Integer, PomUpdateCommand> commandMap = new HashMap<>();
 
@@ -272,6 +272,7 @@ public class MavenPomHandlerDefaultImpl implements MavenPomHandler {
   }
 
   private enum UPDATE_COMMAND_TYPE {
+
     INSERT, REPLACE
   }
 

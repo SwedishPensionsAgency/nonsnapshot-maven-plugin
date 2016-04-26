@@ -31,14 +31,15 @@ public class DependencyTreeProcessorDefaultImplTest {
     MavenModule wsArtifact6 = new MavenModule(null, "at.nonblocking.at", "plugin1", "1.0.0");
 
     wsArtifact1.getDependencies().add(new MavenModuleDependency(0, new MavenArtifact("at.nonblocking.at", "plugin1", "1.0.0")));
-    wsArtifact1.getDependencies().add(new MavenModuleDependency(0, new MavenArtifact("junit", "junit", "4.7")));
+    final MavenArtifact externalArtifactJunit = new MavenArtifact("junit", "junit", "4.7");
+    wsArtifact1.getDependencies().add(new MavenModuleDependency(0, externalArtifactJunit));
     wsArtifact2.setParent(new MavenArtifact("at.nonblocking.at", "parent", "1.0.0"));
     wsArtifact2.getDependencies().add(new MavenModuleDependency(0, new MavenArtifact("at.nonblocking.at", "test2", "1.0.0")));
     wsArtifact3.setParent(new MavenArtifact("at.nonblocking.at", "test1", "1.0.0"));
     wsArtifact4.setParent(new MavenArtifact("at.nonblocking.at", "test1", "1.0.0"));
     wsArtifact5.setParent(new MavenArtifact("at.nonblocking.at", "parent", "1.0.0"));
 
-    List<MavenModule> artifacts = new ArrayList<MavenModule>();
+    List<MavenModule> artifacts = new ArrayList<>();
     artifacts.add(wsArtifact1);
     artifacts.add(wsArtifact2);
     artifacts.add(wsArtifact3);
@@ -51,6 +52,19 @@ public class DependencyTreeProcessorDefaultImplTest {
     dependencyTreeProcessor.buildDependencyTree(artifacts);
 
     dependencyTreeProcessor.printMavenModuleTree(wsArtifact1, System.out);
+    
+    // wsArtifact1
+    assertEquals(wsArtifact6, wsArtifact1.getDependencies().get(0).getArtifact());
+    assertEquals(externalArtifactJunit, wsArtifact1.getDependencies().get(1).getArtifact());
+    // wsArtifact2
+    assertEquals(wsArtifact1, wsArtifact2.getParent());
+    assertEquals(wsArtifact5, wsArtifact2.getDependencies().get(0).getArtifact());
+    //wsArtifact3
+    assertEquals(wsArtifact2, wsArtifact3.getParent());
+    //wsArtifact4
+    assertEquals(wsArtifact2, wsArtifact4.getParent());
+    //wsArtifact5
+    assertEquals(wsArtifact1, wsArtifact5.getParent());
   }
 
   @Test
@@ -62,7 +76,7 @@ public class DependencyTreeProcessorDefaultImplTest {
     wsArtifact2.getDependencies().add(new MavenModuleDependency(0, wsArtifact3));
     wsArtifact3.setDirty(true);
 
-    List<MavenModule> artifacts = new ArrayList<MavenModule>();
+    List<MavenModule> artifacts = new ArrayList<>();
     artifacts.add(wsArtifact1);
     artifacts.add(wsArtifact2);
     artifacts.add(wsArtifact3);
@@ -94,7 +108,7 @@ public class DependencyTreeProcessorDefaultImplTest {
     wsArtifact2.getDependencies().add(new MavenModuleDependency(0, wsArtifact3));
     wsArtifact3.setDirty(true);
 
-    List<MavenModule> artifacts = new ArrayList<MavenModule>();
+    List<MavenModule> artifacts = new ArrayList<>();
     artifacts.add(wsArtifact1);
     artifacts.add(wsArtifact2);
     artifacts.add(wsArtifact3);

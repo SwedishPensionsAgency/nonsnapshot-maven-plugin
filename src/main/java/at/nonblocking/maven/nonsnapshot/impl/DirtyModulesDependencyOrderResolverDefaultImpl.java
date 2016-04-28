@@ -19,6 +19,7 @@ import at.nonblocking.maven.nonsnapshot.DirtyModulesDependencyOrderResolver;
 import at.nonblocking.maven.nonsnapshot.model.MavenArtifact;
 import at.nonblocking.maven.nonsnapshot.model.MavenModule;
 import at.nonblocking.maven.nonsnapshot.model.MavenModuleDependency;
+import at.nonblocking.maven.nonsnapshot.model.MavenProperty;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -74,7 +75,12 @@ public class DirtyModulesDependencyOrderResolverDefaultImpl implements DirtyModu
         internalDependencyFound = true;
       } else {
         // Check if we have dependencies to any other unresolved modules 
-        for (MavenModuleDependency mavenModuleDependency : unresolvedMavenModuleToCheck.getDependencies()) {
+        final List<MavenModuleDependency> dependencies = new ArrayList<>(unresolvedMavenModuleToCheck.getDependencies());
+        dependencies.addAll(unresolvedMavenModuleToCheck.getDependencyManagements());
+        for (MavenProperty mavenProperty : unresolvedMavenModuleToCheck.getMavenProperties()) {
+          dependencies.addAll(mavenProperty.getPropertyReferencingModuleDependency());
+        }
+        for (MavenModuleDependency mavenModuleDependency : dependencies) {
           if (mavenModuleMap.containsKey(getArtifactKey(mavenModuleDependency.getArtifact()))) {
             internalDependencyFound = true;
             break;

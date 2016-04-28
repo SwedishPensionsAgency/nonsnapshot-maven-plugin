@@ -37,7 +37,11 @@ public class MavenModule extends MavenArtifact {
   private final List<MavenModule> children = new ArrayList<>();
 
   private final List<MavenModuleDependency> dependencies = new ArrayList<>();
-
+  
+  private final List<MavenModuleDependency> dependencyManagements = new ArrayList<>();
+  
+  private final List<MavenProperty> mavenProperties = new ArrayList<>();  
+  
   private String newVersion;
 
   private boolean dirty;
@@ -103,6 +107,14 @@ public class MavenModule extends MavenArtifact {
     return dependencies;
   }
 
+  public List<MavenModuleDependency> getDependencyManagements() {
+    return dependencyManagements;
+  }
+  
+  public List<MavenProperty> getMavenProperties() {
+    return mavenProperties;
+  }
+  
   public String getNewVersion() {
     return newVersion;
   }

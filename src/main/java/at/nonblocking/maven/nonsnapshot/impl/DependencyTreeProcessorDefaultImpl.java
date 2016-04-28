@@ -28,6 +28,8 @@ import at.nonblocking.maven.nonsnapshot.DependencyTreeProcessor;
 import at.nonblocking.maven.nonsnapshot.model.MavenArtifact;
 import at.nonblocking.maven.nonsnapshot.model.MavenModule;
 import at.nonblocking.maven.nonsnapshot.model.MavenModuleDependency;
+import at.nonblocking.maven.nonsnapshot.model.MavenProperty;
+import java.util.ArrayList;
 
 /**
  * Default {@link DependencyTreeProcessor} implementation.
@@ -50,9 +52,16 @@ public class DependencyTreeProcessorDefaultImpl implements DependencyTreeProcess
         }
       }
 
-      for (MavenModuleDependency dependency : mavenModule.getDependencies()) {
+      for (MavenProperty mavenProperty : mavenModule.getMavenProperties()) {
+        mavenProperty.getPropertyReferencingModuleDependency().addAll(findPropertyReferencingModuleDependencies(mavenProperty, mavenModules));
+      }
+
+      final List<MavenModuleDependency> dependencies = new ArrayList<>(mavenModule.getDependencies());
+      dependencies.addAll(mavenModule.getDependencyManagements());
+
+      for (MavenModuleDependency dependency : dependencies) {
         MavenModule dependencyModule = findArtifact(mavenModules, dependency.getArtifact().getGroupId(), dependency.getArtifact()
-            .getArtifactId());
+                .getArtifactId());
         if (dependencyModule != null) {
           dependency.setArtifact(dependencyModule);
         }
@@ -68,6 +77,23 @@ public class DependencyTreeProcessorDefaultImpl implements DependencyTreeProcess
     }
 
     return null;
+  }
+
+  private List<MavenModuleDependency> findPropertyReferencingModuleDependencies(MavenProperty mavenProperty, List<MavenModule> mavenModules) {
+    final ArrayList<MavenModuleDependency> result = new ArrayList<>();
+    for (MavenModule mavenModule : mavenModules) {
+      
+      final List<MavenModuleDependency> dependencies = new ArrayList<>(mavenModule.getDependencies());
+      dependencies.addAll(mavenModule.getDependencyManagements());
+      for(MavenModuleDependency mavenDependency : dependencies){
+        final MavenArtifact dependency = mavenDependency.getArtifact();
+        if(dependency.getVersion() != null && dependency.getVersion().equals("${" + mavenProperty.getName() + "}")){
+          result.add(mavenDependency);
+        }
+      }
+    }
+
+    return result;
   }
 
   @Override
@@ -91,20 +117,25 @@ public class DependencyTreeProcessorDefaultImpl implements DependencyTreeProcess
         } else if (mavenModule.getParent() instanceof UpdatedUpstreamMavenArtifact) {
           UpdatedUpstreamMavenArtifact updatedUpstreamMavenArtifact = (UpdatedUpstreamMavenArtifact) mavenModule.getParent();
           LOG.info("Marking module {}:{} dirty because upstream parent is dirty: {}:{}.",
-              new Object[]{mavenModule.getGroupId(), mavenModule.getArtifactId(),
-                  updatedUpstreamMavenArtifact.getGroupId(), updatedUpstreamMavenArtifact.getArtifactId()});
+                  new Object[]{mavenModule.getGroupId(), mavenModule.getArtifactId(),
+                    updatedUpstreamMavenArtifact.getGroupId(), updatedUpstreamMavenArtifact.getArtifactId()});
           mavenModule.setDirty(true);
           changes = true;
           continue;
         }
       }
-
-      for (MavenModuleDependency dependency : mavenModule.getDependencies()) {
+      
+      final List<MavenModuleDependency> dependencies = new ArrayList<>(mavenModule.getDependencies());
+      dependencies.addAll(mavenModule.getDependencyManagements());
+      for (MavenProperty mavenProperty : mavenModule.getMavenProperties()){
+        dependencies.addAll(mavenProperty.getPropertyReferencingModuleDependency());
+      }
+      for (MavenModuleDependency dependency : dependencies) {
         if (dependency.getArtifact() instanceof MavenModule) {
           MavenModule parentModule = (MavenModule) dependency.getArtifact();
           if (parentModule.isDirty()) {
             LOG.info("Marking module {}:{} dirty because dependency is dirty: {}:{}",
-                new Object[]{mavenModule.getGroupId(), mavenModule.getArtifactId(), parentModule.getGroupId(), parentModule.getArtifactId()});
+                    new Object[]{mavenModule.getGroupId(), mavenModule.getArtifactId(), parentModule.getGroupId(), parentModule.getArtifactId()});
             mavenModule.setDirty(true);
             changes = true;
             break;
@@ -112,8 +143,8 @@ public class DependencyTreeProcessorDefaultImpl implements DependencyTreeProcess
         } else if (dependency.getArtifact() instanceof UpdatedUpstreamMavenArtifact) {
           UpdatedUpstreamMavenArtifact updatedUpstreamMavenArtifact = (UpdatedUpstreamMavenArtifact) dependency.getArtifact();
           LOG.info("Marking module {}:{} dirty because upstream dependency is dirty: {}:{}",
-              new Object[]{mavenModule.getGroupId(), mavenModule.getArtifactId(),
-                  updatedUpstreamMavenArtifact.getGroupId(), updatedUpstreamMavenArtifact.getArtifactId()});
+                  new Object[]{mavenModule.getGroupId(), mavenModule.getArtifactId(),
+                    updatedUpstreamMavenArtifact.getGroupId(), updatedUpstreamMavenArtifact.getArtifactId()});
           mavenModule.setDirty(true);
           changes = true;
           break;

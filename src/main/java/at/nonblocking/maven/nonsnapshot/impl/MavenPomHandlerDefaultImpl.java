@@ -47,6 +47,7 @@ import at.nonblocking.maven.nonsnapshot.exception.NonSnapshotPluginException;
 import at.nonblocking.maven.nonsnapshot.model.MavenArtifact;
 import at.nonblocking.maven.nonsnapshot.model.MavenModule;
 import at.nonblocking.maven.nonsnapshot.model.MavenModuleDependency;
+import at.nonblocking.maven.nonsnapshot.model.MavenProperty;
 
 /**
  * Default implementation of {@link MavenPomHandler}
@@ -112,11 +113,25 @@ public class MavenPomHandlerDefaultImpl implements MavenPomHandler {
       mavenModule.setParentVersionLocation(getVersionLocation(model.getParent()));
     }
 
+    // Properties
+    for (String propertyName : model.getProperties().stringPropertyNames()) {
+      mavenModule.getMavenProperties().add(new MavenProperty(propertyName, getPropertyLocation(model, propertyName)));
+    }
+
     // Dependencies
     for (Dependency dependency : model.getDependencies()) {
       mavenModule.getDependencies().add(new MavenModuleDependency(
               getVersionLocation(dependency),
               new MavenArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion())));
+    }
+
+    // Dependency management
+    if (model.getDependencyManagement() != null) {
+      for (Dependency dependencyManagement : model.getDependencyManagement().getDependencies()) {
+        mavenModule.getDependencyManagements().add(new MavenModuleDependency(
+                getVersionLocation(dependencyManagement), 
+                new MavenArtifact(dependencyManagement.getGroupId(), dependencyManagement.getArtifactId(), dependencyManagement.getVersion())));
+      }
     }
 
     // Plugins
@@ -172,6 +187,20 @@ public class MavenPomHandlerDefaultImpl implements MavenPomHandler {
     return location.getLineNumber();
   }
 
+  private static int getPropertyLocation(InputLocationTracker tracker, String propertyName) {
+    InputLocation location = tracker.getLocation("properties");
+
+    if (location != null) {
+      location = location.getLocation(propertyName);
+    }
+
+    if (location == null) {
+      location = tracker.getLocation("artifactId");
+    }
+
+    return location.getLineNumber();
+  }
+
   @Override
   public void updateArtifact(MavenModule mavenModule) {
     if (!mavenModule.isDirty()) {
@@ -190,7 +219,13 @@ public class MavenPomHandlerDefaultImpl implements MavenPomHandler {
       }
     }
 
-    for (MavenModuleDependency dependency : mavenModule.getDependencies()) {
+    for (MavenProperty mavenProperty : mavenModule.getMavenProperties()) {
+      addUpdatePropertyCommand(mavenProperty, commands);
+    }
+
+    final List<MavenModuleDependency> dependencies = new ArrayList<>(mavenModule.getDependencies());
+    dependencies.addAll(mavenModule.getDependencyManagements());
+    for (MavenModuleDependency dependency : dependencies) {
       if (dependency.getArtifact() instanceof MavenModule) {
         addUpdateCommand((MavenModule) dependency.getArtifact(), dependency.getVersionLocation(), true, commands);
       } else if (dependency.getArtifact() instanceof UpdatedUpstreamMavenArtifact) {
@@ -219,6 +254,40 @@ public class MavenPomHandlerDefaultImpl implements MavenPomHandler {
 
   private void addUpdateCommand(UpdatedUpstreamMavenArtifact updatedUpstreamMavenArtifact, Integer lineNumber, List<PomUpdateCommand> commands) {
     commands.add(new PomUpdateCommand(lineNumber, UPDATE_COMMAND_TYPE.REPLACE, "<version>.*?</version>", "<version>" + updatedUpstreamMavenArtifact.getNewVersion() + "</version>"));
+  }
+
+  private void addUpdatePropertyCommand(MavenProperty mavenProperty, List<PomUpdateCommand> commands) {
+    String newValue = getNewVersion(mavenProperty.getPropertyReferencingModuleDependency());
+
+    if (newValue == null) {
+      LOG.debug("No new property value set for property {}. Cannot update property!", mavenProperty.getName());
+      return;
+    }
+
+    String propertyName = mavenProperty.getName();
+    commands.add(new PomUpdateCommand(mavenProperty.getPropertyLocation(), UPDATE_COMMAND_TYPE.REPLACE, "<" + propertyName + ">.*?</" + propertyName + ">", "<" + propertyName + ">" + newValue + "</" + propertyName + ">"));
+  }
+
+  private static String getNewVersion(List<MavenModuleDependency> moduleDependencies) {
+    final String ERROR_MSG = "Property used to reference modules with different version numbers";
+    String newVersion = null;
+    for (MavenModuleDependency moduleDependency : moduleDependencies) {
+      if (moduleDependency.getArtifact() instanceof MavenModule) {
+        MavenModule dependency = (MavenModule) moduleDependency.getArtifact();
+        newVersion = getNewValueIfEqualOrNotAlreadyExistingOtherwiseThrowException(newVersion, dependency.getNewVersion(), ERROR_MSG);
+      } else if (moduleDependency.getArtifact() instanceof UpdatedUpstreamMavenArtifact) {
+        UpdatedUpstreamMavenArtifact dependency = (UpdatedUpstreamMavenArtifact) moduleDependency.getArtifact();
+        newVersion = getNewValueIfEqualOrNotAlreadyExistingOtherwiseThrowException(newVersion, dependency.getNewVersion(), ERROR_MSG);
+      }
+    }
+    return newVersion;
+  }
+
+  private static String getNewValueIfEqualOrNotAlreadyExistingOtherwiseThrowException(String existingValue, String newValue, String msg) {
+    if (existingValue != null && !existingValue.equals(newValue)) {
+      throw new NonSnapshotPluginException("Values differ: \"" + existingValue + "\" not equal to \"" + newValue + "\". " + msg);
+    }
+    return newValue;
   }
 
   @SuppressWarnings("ConvertToTryWithResources")

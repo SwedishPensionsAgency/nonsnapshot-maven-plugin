@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import at.nonblocking.maven.nonsnapshot.exception.NonSnapshotPluginException;
 import at.nonblocking.maven.nonsnapshot.model.MavenModule;
+import at.nonblocking.maven.nonsnapshot.model.MavenProperty;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import org.apache.maven.plugins.annotations.Component;
@@ -59,7 +60,7 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
   private static final Logger LOG = LoggerFactory.getLogger(NonSnapshotUpdateVersionsMojo.class);
 
   private static final String LINE_SEPARATOR = System.getProperty("line.separator");
-  
+
   @Component(role = DirtyModulesDependencyOrderResolver.class, hint = "default")
   private DirtyModulesDependencyOrderResolver dirtyModulesDependencyOrderResolver;
 
@@ -221,7 +222,12 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
       }
 
       //Dependencies
-      for (MavenModuleDependency moduleDependency : mavenModule.getDependencies()) {
+      final List<MavenModuleDependency> dependencies = new ArrayList<>(mavenModule.getDependencies());
+      dependencies.addAll(mavenModule.getDependencyManagements());
+      for (MavenProperty mavenProperty : mavenModule.getMavenProperties()) {
+        dependencies.addAll(mavenProperty.getPropertyReferencingModuleDependency());
+      }
+      for (MavenModuleDependency moduleDependency : dependencies) {
         UpdatedUpstreamMavenArtifact updatedUpstreamMavenArtifactDep = updateUpstreamArtifact(moduleDependency.getArtifact());
         if (updatedUpstreamMavenArtifactDep != null) {
           moduleDependency.setArtifact(updatedUpstreamMavenArtifactDep);
@@ -272,7 +278,7 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
         if (getChangeTracker() == CHANGE_TRACKER.REVISION && getScmType() == SCM_TYPE.SVN) {
           mavenModule.setNewVersion(getBaseVersion() + "-" + getScmHandler().getNextRevisionId(modulesPath));
         } else if (getModuleIncrementalVersionQualifier() == MODULE_INCREMENTAL_VERSION_QUALIFIER.BUILD_NUMBER) {
-          mavenModule.setNewVersion(getBaseVersion()+ getIncrementalVersionSeparator() + getBuildNumber());
+          mavenModule.setNewVersion(getBaseVersion() + getIncrementalVersionSeparator() + getBuildNumber());
         } else {
           mavenModule.setNewVersion(getBaseVersion() + "-" + this.timestamp);
         }

@@ -32,6 +32,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import org.apache.maven.project.ProjectBuilder;
+import org.apache.maven.project.ProjectBuildingException;
+import org.apache.maven.project.ProjectBuildingRequest;
 
 /**
  * Default implementation of a module traverser.
@@ -43,16 +46,24 @@ public class ModuleTraverserDefaultImpl implements ModuleTraverser {
 
   private static final Logger LOG = LoggerFactory.getLogger(ModuleTraverserDefaultImpl.class);
 
+  private ProjectBuilder mavenProjectBuilder;
+
   @Override
-  public List<Model> findAllModules(MavenProject baseProject, List<Profile> activeProfiles) {
-    LOG.info("Scanning for Maven modules... Active profiles: {}", activeProfiles);
+  public void setMavenProjectBuilder(ProjectBuilder mavenProjectBuilder) {
+    this.mavenProjectBuilder = mavenProjectBuilder;
+  }
+  
+  @Override
+  public List<Model> findAllModules(MavenProject baseProject) {
+    LOG.info("Scanning for Maven modules...");
 
     List<Model> modelList = new ArrayList<>();
-    recursiveFindModules(baseProject.getBasedir(), modelList, activeProfiles);
+    recursiveFindModules(baseProject.getBasedir(), modelList, baseProject.getProjectBuildingRequest());
+
     return modelList;
   }
 
-  private void recursiveFindModules(File baseDir, List<Model> modelList, List<Profile> activeProfiles) {
+  private void recursiveFindModules(File baseDir, List<Model> modelList, ProjectBuildingRequest pbr) {
     MavenXpp3ReaderEx reader = new MavenXpp3ReaderEx();
     File pom = new File(baseDir, "pom.xml");
 
@@ -73,26 +84,23 @@ public class ModuleTraverserDefaultImpl implements ModuleTraverser {
     Set<String> modulePaths = new LinkedHashSet<>();
     modulePaths.addAll(model.getModules());
 
-    if (activeProfiles != null) {
-      for (Profile activeProfile : activeProfiles) {
-        modulePaths.addAll(getProfileModules(model, activeProfile));
-      }
+    buildMavenProjectFromPom(pom, pbr);
+
+    for (Profile activeProfile : buildMavenProjectFromPom(pom, pbr).getActiveProfiles()) {
+      modulePaths.addAll(activeProfile.getModules());
     }
 
     for (String modulePath : modulePaths) {
       File moduleDir = new File(baseDir, modulePath);
-      recursiveFindModules(moduleDir, modelList, activeProfiles);
+      recursiveFindModules(moduleDir, modelList, pbr);
     }
   }
 
-  private List<String> getProfileModules(Model model, Profile activeProfile) {
-    for (Profile profile : model.getProfiles()) {
-      if (profile.getId().equals(activeProfile.getId())) {
-        return profile.getModules();
-      }
+  private MavenProject buildMavenProjectFromPom(File pom, ProjectBuildingRequest pbr) {
+    try {
+      return mavenProjectBuilder.build(pom, pbr).getProject();
+    } catch (ProjectBuildingException ex) {
+      throw new NonSnapshotPluginException("Could not build Maven Project from " + pom.getAbsolutePath(), ex);
     }
-
-    return Collections.emptyList();
   }
-
 }

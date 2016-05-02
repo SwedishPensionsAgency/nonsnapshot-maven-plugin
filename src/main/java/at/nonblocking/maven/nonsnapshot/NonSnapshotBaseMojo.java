@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.impl.StaticLoggerBinder;
 
 import at.nonblocking.maven.nonsnapshot.exception.NonSnapshotPluginException;
+import org.apache.maven.project.ProjectBuilder;
 
 /**
  * Base class for NonSnapshot Plugin Mojos.
@@ -171,6 +172,9 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
   private ScmHandler scmHandler;
 
   private PlexusContainer plexusContainer;
+  
+  @Component
+  private ProjectBuilder mavenProjectBuilder;
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
@@ -222,6 +226,8 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
     this.scmHandler.init(getMavenProject().getBasedir(), this.scmUser, this.scmPassword, properties);
 
     this.processedUpstreamDependencies = this.upstreamDependencyHandler.processDependencyList(getUpstreamDependencies());
+    
+    this.moduleTraverser.setMavenProjectBuilder(this. mavenProjectBuilder);
   }
 
   private void excludeInvalidParameterCombinations() {
@@ -483,5 +489,13 @@ abstract class NonSnapshotBaseMojo extends AbstractMojo implements Contextualiza
 
   public void setPlexusContainer(PlexusContainer plexusContainer) {
     this.plexusContainer = plexusContainer;
+  }
+
+  public ProjectBuilder getMavenProjectBuilder() {
+    return mavenProjectBuilder;
+  }
+
+  public void setMavenProjectBuilder(ProjectBuilder mavenProjectBuilder) {
+    this.mavenProjectBuilder = mavenProjectBuilder;
   }
 }

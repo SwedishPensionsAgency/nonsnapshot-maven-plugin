@@ -69,8 +69,8 @@ public class NonSnapshotUpdateVersionsMojo extends NonSnapshotBaseMojo {
   @Override
   protected void internalExecute() {
     setTimestamp();
-
-    List<Model> mavenModels = getModuleTraverser().findAllModules(getMavenProject(), getMavenProject().getActiveProfiles());
+    
+    List<Model> mavenModels = getModuleTraverser().findAllModules(getMavenProject());
 
     List<MavenModule> mavenModules = buildModules(mavenModels);
 

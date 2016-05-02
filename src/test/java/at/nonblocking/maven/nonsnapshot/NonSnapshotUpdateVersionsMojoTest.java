@@ -12,7 +12,6 @@ import java.util.*;
 import at.nonblocking.maven.nonsnapshot.model.MavenArtifact;
 import at.nonblocking.maven.nonsnapshot.model.MavenModuleDependency;
 import org.apache.maven.model.Model;
-import org.apache.maven.model.Profile;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.FileUtils;
 import org.junit.Before;
@@ -91,7 +90,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     MavenProject mavenProject = new MavenProject();
     mavenProject.setFile(new File("target"));
 
-    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1, model2, model3, model4, model5));
+    when(this.mockModuleTraverser.findAllModules(mavenProject)).thenReturn(Arrays.asList(model1, model2, model3, model4, model5));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockMavenPomHandler.readArtifact(model2)).thenReturn(wsArtifact2);
     when(this.mockMavenPomHandler.readArtifact(model3)).thenReturn(wsArtifact3);
@@ -174,7 +173,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     MavenProject mavenProject = new MavenProject();
     mavenProject.setFile(new File("target"));
 
-    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1, model2, model3, model4, model5));
+    when(this.mockModuleTraverser.findAllModules(mavenProject)).thenReturn(Arrays.asList(model1, model2, model3, model4, model5));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockMavenPomHandler.readArtifact(model2)).thenReturn(wsArtifact2);
     when(this.mockMavenPomHandler.readArtifact(model3)).thenReturn(wsArtifact3);
@@ -262,7 +261,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     MavenProject mavenProject = new MavenProject();
     mavenProject.setFile(new File("target"));
 
-    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1, model2, model3, model4, model5));
+    when(this.mockModuleTraverser.findAllModules(mavenProject)).thenReturn(Arrays.asList(model1, model2, model3, model4, model5));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockMavenPomHandler.readArtifact(model2)).thenReturn(wsArtifact2);
     when(this.mockMavenPomHandler.readArtifact(model3)).thenReturn(wsArtifact3);
@@ -340,7 +339,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     MavenProject mavenProject = new MavenProject();
     mavenProject.setFile(new File("target"));
 
-    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(asList(model1, model2, model3, model4, model5));
+    when(this.mockModuleTraverser.findAllModules(mavenProject)).thenReturn(asList(model1, model2, model3, model4, model5));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockMavenPomHandler.readArtifact(model2)).thenReturn(wsArtifact2);
     when(this.mockMavenPomHandler.readArtifact(model3)).thenReturn(wsArtifact3);
@@ -395,7 +394,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     MavenProject mavenProject = new MavenProject();
     mavenProject.setFile(new File("target"));
 
-    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1, model2, model3, model4, model5));
+    when(this.mockModuleTraverser.findAllModules(mavenProject)).thenReturn(Arrays.asList(model1, model2, model3, model4, model5));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockMavenPomHandler.readArtifact(model2)).thenReturn(wsArtifact2);
     when(this.mockMavenPomHandler.readArtifact(model3)).thenReturn(wsArtifact3);
@@ -452,7 +451,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     ProcessedUpstreamDependency upstreamDependency = new ProcessedUpstreamDependency(null, null, -1, -1, -1);
     List<ProcessedUpstreamDependency> upstreamDependencies = Arrays.asList(upstreamDependency);
 
-    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1, model2));
+    when(this.mockModuleTraverser.findAllModules(mavenProject)).thenReturn(Arrays.asList(model1, model2));
 
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockMavenPomHandler.readArtifact(model2)).thenReturn(wsArtifact2);
@@ -517,7 +516,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     ProcessedUpstreamDependency upstreamDependency = new ProcessedUpstreamDependency(null, null, -1, -1, -1);
     List<ProcessedUpstreamDependency> upstreamDependencies = Arrays.asList(upstreamDependency);
 
-    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1, model2));
+    when(this.mockModuleTraverser.findAllModules(mavenProject)).thenReturn(Arrays.asList(model1, model2));
 
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockMavenPomHandler.readArtifact(model2)).thenReturn(wsArtifact2);
@@ -582,7 +581,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     ProcessedUpstreamDependency upstreamDependency = new ProcessedUpstreamDependency(null, null, -1, -1, -1);
     List<ProcessedUpstreamDependency> upstreamDependencies = Arrays.asList(upstreamDependency);
 
-    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1, model2));
+    when(this.mockModuleTraverser.findAllModules(mavenProject)).thenReturn(Arrays.asList(model1, model2));
 
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockMavenPomHandler.readArtifact(model2)).thenReturn(wsArtifact2);
@@ -648,7 +647,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     ProcessedUpstreamDependency upstreamDependency = new ProcessedUpstreamDependency(null, null, -1, -1, -1);
     List<ProcessedUpstreamDependency> upstreamDependencies = Arrays.asList(upstreamDependency);
 
-    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1, model2));
+    when(this.mockModuleTraverser.findAllModules(mavenProject)).thenReturn(Arrays.asList(model1, model2));
 
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockMavenPomHandler.readArtifact(model2)).thenReturn(wsArtifact2);
@@ -698,7 +697,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     MavenProject mavenProject = new MavenProject();
     mavenProject.setFile(new File("target"));
 
-    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1));
+    when(this.mockModuleTraverser.findAllModules(mavenProject)).thenReturn(Arrays.asList(model1));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
 
     this.nonSnapshotMojo.setChangeTracker(CHANGE_TRACKER.REVISION);
@@ -728,7 +727,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     mavenProject.setFile(new File("target"));
 
     this.nonSnapshotMojo.setDeferPomCommit(true);
-    when(this.mockModuleTraverser.findAllModules(mavenProject, Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1));
+    when(this.mockModuleTraverser.findAllModules(mavenProject)).thenReturn(Arrays.asList(model1));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
 
     when(this.mockScmHandler.getNextRevisionId(pom1.getParentFile())).thenReturn("1444");
@@ -763,7 +762,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     File pom1 = new File("test1/pom.xm");
     MavenModule wsArtifact1 = new MavenModule(pom1, "at.nonblocking", "test3", "1.0.0-1222");
 
-    when(this.mockModuleTraverser.findAllModules(this.nonSnapshotMojo.getMavenProject(), Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1));
+    when(this.mockModuleTraverser.findAllModules(this.nonSnapshotMojo.getMavenProject())).thenReturn(Arrays.asList(model1));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
     List<MavenModule> artifactList = asList(wsArtifact1);
@@ -802,7 +801,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     File pom1 = new File("test1/pom.xm");
     MavenModule wsArtifact1 = new MavenModule(pom1, "at.nonblocking", "test3", "1.0.0-1222");
 
-    when(this.mockModuleTraverser.findAllModules(this.nonSnapshotMojo.getMavenProject(), Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1));
+    when(this.mockModuleTraverser.findAllModules(this.nonSnapshotMojo.getMavenProject())).thenReturn(Arrays.asList(model1));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
 
@@ -837,7 +836,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     File pom1 = new File("test1/pom.xm");
     MavenModule wsArtifact1 = new MavenModule(pom1, "at.nonblocking", "test3", "1.0.0-1222");
 
-    when(this.mockModuleTraverser.findAllModules(this.nonSnapshotMojo.getMavenProject(), Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1));
+    when(this.mockModuleTraverser.findAllModules(this.nonSnapshotMojo.getMavenProject())).thenReturn(Arrays.asList(model1));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
     when(this.mockScmHandler.getNextRevisionId(this.nonSnapshotMojo.getMavenProject().getBasedir())).thenReturn(currentSVNRevision);
@@ -876,7 +875,7 @@ public class NonSnapshotUpdateVersionsMojoTest {
     File pom1 = new File("test1/pom.xm");
     MavenModule wsArtifact1 = new MavenModule(pom1, "at.nonblocking", "test3", "1.0.0-1222");
 
-    when(this.mockModuleTraverser.findAllModules(this.nonSnapshotMojo.getMavenProject(), Collections.<Profile>emptyList())).thenReturn(Arrays.asList(model1));
+    when(this.mockModuleTraverser.findAllModules(this.nonSnapshotMojo.getMavenProject())).thenReturn(Arrays.asList(model1));
     when(this.mockMavenPomHandler.readArtifact(model1)).thenReturn(wsArtifact1);
     when(this.mockScmHandler.isWorkingCopy(any(File.class))).thenReturn(true);
     when(this.mockScmHandler.getNextRevisionId(this.nonSnapshotMojo.getMavenProject().getBasedir())).thenReturn(currentSVNRevision);

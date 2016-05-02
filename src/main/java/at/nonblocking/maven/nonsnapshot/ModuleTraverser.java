@@ -16,10 +16,10 @@
 package at.nonblocking.maven.nonsnapshot;
 
 import org.apache.maven.model.Model;
-import org.apache.maven.model.Profile;
 import org.apache.maven.project.MavenProject;
 
 import java.util.List;
+import org.apache.maven.project.ProjectBuilder;
 
 /**
  * Traverses all nested Maven modules
@@ -32,9 +32,9 @@ public interface ModuleTraverser {
    * Find (recursively) all Maven modules
    *
    * @param baseProject MavenProject
-   * @param activeProfiles List<Profile>
-   * @return List<Model>
+   * @return list of found modules
    */
-  List<Model> findAllModules(MavenProject baseProject, List<Profile> activeProfiles);
+  List<Model> findAllModules(MavenProject baseProject);
 
+  void setMavenProjectBuilder(ProjectBuilder mavenProjectBuilder);
 }
